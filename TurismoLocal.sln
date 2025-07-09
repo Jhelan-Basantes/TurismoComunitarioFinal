@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "turismolocal.client", "turismolocal.client\turismolocal.client.esproj", "{AC41B421-CA5F-89BD-3EE5-858459FE6D19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurismoLocal.Server", "TurismoLocal.Server\TurismoLocal.Server.csproj", "{E5BD9FDC-FD97-48D5-B585-3DEEA4447E9B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC41B421-CA5F-89BD-3EE5-858459FE6D19}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E5BD9FDC-FD97-48D5-B585-3DEEA4447E9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5BD9FDC-FD97-48D5-B585-3DEEA4447E9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5BD9FDC-FD97-48D5-B585-3DEEA4447E9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5BD9FDC-FD97-48D5-B585-3DEEA4447E9B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {07687B34-64B9-44A5-B848-FECCD15BA241}
+	EndGlobalSection
+EndGlobal
