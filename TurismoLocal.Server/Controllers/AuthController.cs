@@ -51,22 +51,33 @@ public class AuthController : ControllerBase
             return Unauthorized("Credenciales inválidas");
 
         var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Secret"]!);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new Claim(ClaimTypes.Name, usuario.Username),
+            new Claim(ClaimTypes.Role, usuario.Role)
+        };
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Name, usuario.Username),
-                new Claim(ClaimTypes.Role, usuario.Role)
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(2),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 
-        var token = new JwtSecurityTokenHandler().CreateToken(tokenDescriptor);
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var tokenString = tokenHandler.WriteToken(token);
 
-        return Ok(new { token = tokenString });
+        return Ok(new
+        {
+            id = usuario.Id,
+            username = usuario.Username,
+            role = usuario.Role,
+            token = tokenString,
+            // Devuelve también los claims (opcional)
+            claims = claims.Select(c => new { c.Type, c.Value })
+        });
     }
 }
 

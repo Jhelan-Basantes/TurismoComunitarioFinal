@@ -1,4 +1,16 @@
 import React, { useState } from 'react';
+import Layout from '../components/layout/Layout';
+import {
+    Box,
+    Typography,
+    TextField,
+    Button,
+    MenuItem,
+    Alert,
+    Slide,
+    Stack,
+} from '@mui/material';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useNavigate } from 'react-router-dom';
 
 function Registro() {
@@ -7,106 +19,130 @@ function Registro() {
         username: '',
         password: '',
         email: '',
-        role: 'Turista'
+        role: 'Turista',
     });
 
     const [mensaje, setMensaje] = useState('');
+    const [showMensaje, setShowMensaje] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMensaje('');
+        setShowMensaje(false);
 
         try {
             const res = await fetch('https://localhost:7224/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form)
+                body: JSON.stringify(form),
             });
 
             if (res.ok) {
-                alert("Registro exitoso. Ahora puedes iniciar sesión.");
+                alert('Registro exitoso. Ahora puedes iniciar sesiÃ³n.');
                 navigate('/login');
             } else {
                 const data = await res.json();
                 setMensaje(data.message || 'Error al registrarse');
+                setShowMensaje(true);
             }
         } catch (error) {
-            console.error("Error al registrarse:", error);
-            setMensaje('Error de conexión con el servidor');
+            console.error('Error al registrarse:', error);
+            setMensaje('Error de conexiÃ³n con el servidor');
+            setShowMensaje(true);
         }
     };
 
     return (
-        <div className="container mt-5" style={{ maxWidth: '500px' }}>
-            <h2 className="mb-4 text-center">Registro de Usuario</h2>
+        <Layout>
+            <Box
+                sx={{
+                    maxWidth: 450,
+                    mx: 'auto',
+                    mt: 6,
+                    p: 3,
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                }}
+                component="form"
+                onSubmit={handleSubmit}
+            >
+                <Stack direction="row" spacing={1} alignItems="center" mb={3}>
+                    <PersonAddIcon color="primary" fontSize="large" />
+                    <Typography variant="h5" component="h2">
+                        Registro de Usuario
+                    </Typography>
+                </Stack>
 
-            {mensaje && (
-                <div className="alert alert-danger">{mensaje}</div>
-            )}
+                <Slide direction="down" in={showMensaje} mountOnEnter unmountOnExit>
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {mensaje}
+                    </Alert>
+                </Slide>
 
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label>Nombre de usuario</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="username"
-                        value={form.username}
-                        onChange={handleChange}
-                        required
-                        minLength={3}
-                    />
-                </div>
+                <TextField
+                    label="Nombre de usuario"
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    margin="normal"
+                    inputProps={{ minLength: 3 }}
+                />
 
-                <div className="mb-3">
-                    <label>Correo electrónico</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        name="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
+                <TextField
+                    label="Correo electrÃ³nico"
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    margin="normal"
+                />
 
-                <div className="mb-3">
-                    <label>Contraseña</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        name="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        required
-                        minLength={4}
-                    />
-                </div>
+                <TextField
+                    label="ContraseÃ±a"
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                    margin="normal"
+                    inputProps={{ minLength: 4 }}
+                />
 
-                <div className="mb-3">
-                    <label>Rol</label>
-                    <select
-                        className="form-select"
-                        name="role"
-                        value={form.role}
-                        onChange={handleChange}
-                    >
-                        <option value="Turista">Turista</option>
-                        <option value="Guia">Guía</option>
-                    
-                    </select>
-                </div>
+                <TextField
+                    label="Rol"
+                    select
+                    name="role"
+                    value={form.role}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                >
+                    <MenuItem value="Turista">Turista</MenuItem>
+                    <MenuItem value="Guia">GuÃ­a</MenuItem>
+                </TextField>
 
-                <button type="submit" className="btn btn-primary w-100">
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 3 }}
+                >
                     Registrarse
-                </button>
-            </form>
-        </div>
+                </Button>
+            </Box>
+        </Layout>
     );
 }
 

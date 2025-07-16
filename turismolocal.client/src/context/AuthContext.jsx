@@ -1,24 +1,32 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const [username, setUsername] = useState(localStorage.getItem("username") || "");
+    const [usuario, setUsuario] = useState(null);
+
+    // Restaurar sesión desde localStorage al cargar la app
+    useEffect(() => {
+        const storedUser = localStorage.getItem("usuario");
+        if (storedUser) {
+            setUsuario(JSON.parse(storedUser));
+        }
+    }, []);
 
     const login = (user) => {
-        setUsername(user);
-        localStorage.setItem("username", user);
+        setUsuario(user);
+        localStorage.setItem("usuario", JSON.stringify(user));
     };
 
     const logout = () => {
-        setUsername("");
-        localStorage.removeItem("username");
-        localStorage.removeItem("token");
+        setUsuario(null);
+        localStorage.removeItem("usuario");
     };
 
     return (
-        <AuthContext.Provider value={{ username, login, logout }}>
+        <AuthContext.Provider value={{ usuario, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 }
+

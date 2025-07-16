@@ -1,258 +1,312 @@
-// src/components/Reservas.jsx
-import React, { useState } from 'react';
-
-const lugares = [
-    {
-        id: 1,
-        titulo: 'Pucar· Tambo',
-        personasRecomendadas: '2-6 personas',
-        accesibleDiscapacitados: true
-    },
-    {
-        id: 2,
-        titulo: 'San Clemente Turismo Comunitario',
-        personasRecomendadas: '4-10 personas',
-        accesibleDiscapacitados: false
-    },
-    {
-        id: 3,
-        titulo: 'Isla CorazÛn',
-        personasRecomendadas: '1-5 personas',
-        accesibleDiscapacitados: false
-    },
-    {
-        id: 4,
-        titulo: 'Saraguro',
-        personasRecomendadas: '2-8 personas',
-        accesibleDiscapacitados: true
-    }
-];
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Grid, Box, Typography, FormControl, InputLabel, Select, MenuItem, TextField,
+    Checkbox, FormControlLabel, Button, Card, CardContent, Divider
+} from '@mui/material';
+import { AuthContext } from '../context/AuthContext';
+import Layout from '../components/layout/Layout';
 
 function Reservas() {
-    const [lugarSeleccionado, setLugarSeleccionado] = useState('');
+    const { usuario } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const [lugares, setLugares] = useState([]);
+    const [lugarId, setLugarId] = useState('');
     const [cantidadPersonas, setCantidadPersonas] = useState(1);
     const [personas, setPersonas] = useState([]);
-    const [discapacidadGeneral, setDiscapacidadGeneral] = useState(false);
-    const [tiempoInicio, setTiempoInicio] = useState('');
-    const [tiempoFin, setTiempoFin] = useState('');
+    const [fechaInicio, setFechaInicio] = useState('');
+    const [fechaFin, setFechaFin] = useState('');
     const [excesoPersonas, setExcesoPersonas] = useState(false);
+    const [reservasExistentes, setReservasExistentes] = useState([]);
+    const [llevaMascotas, setLlevaMascotas] = useState(false);
 
-    const obtenerMaximoPersonas = (lugarTitulo) => {
-        const lugar = lugares.find(l => l.titulo === lugarTitulo);
-        if (lugar) {
+    useEffect(() => {
+        fetch('https://localhost:7224/api/lugares')
+            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar lugares'))
+            .then(setLugares)
+            .catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        if (lugarId) {
+            fetch(`https://localhost:7224/api/reservas/lugar/${lugarId}`)
+                .then(res => res.ok ? res.json() : Promise.reject('Error al cargar reservas'))
+                .then(setReservasExistentes)
+                .catch(console.error);
+        } else {
+            setReservasExistentes([]);
+        }
+    }, [lugarId]);
+
+    const obtenerMaximoPersonas = (id) => {
+        const lugar = lugares.find(l => l.id === parseInt(id));
+        if (lugar?.personasRecomendadas) {
             const partes = lugar.personasRecomendadas.split('-');
-            if (partes.length === 2) {
-                const max = parseInt(partes[1]);
-                return isNaN(max) ? null : max;
-            }
+            return partes.length === 2 ? parseInt(partes[1]) : null;
         }
         return null;
     };
 
+    const hayConflictoReserva = (inicio, fin) => {
+        const ini = new Date(inicio);
+        const fi = new Date(fin);
+        return reservasExistentes.some(r => {
+            const ri = new Date(r.tiempoInicio);
+            const rf = new Date(r.tiempoFin);
+            return (ini < rf && fi > ri);
+        });
+    };
+
+    const calcularDiasEntre = (inicio, fin) => {
+        const ini = new Date(inicio);
+        const fi = new Date(fin);
+        const diffTime = fi - ini;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    const clasificarEdad = (edad) => {
+        const e = Number(edad);
+        if (isNaN(e) || e < 0) return '';
+        if (e < 2) return 'Beb√©';
+        if (e <= 12) return 'Ni√±o';
+        if (e <= 59) return 'Adulto';
+        return 'Adulto Mayor';
+    };
+
     const handleLugarChange = (e) => {
-        const nuevoLugar = e.target.value;
-        setLugarSeleccionado(nuevoLugar);
-        const maxPersonas = obtenerMaximoPersonas(nuevoLugar);
-        setExcesoPersonas(maxPersonas && cantidadPersonas > maxPersonas);
+        const nuevoId = e.target.value;
+        setLugarId(nuevoId);
+        const max = obtenerMaximoPersonas(nuevoId);
+        setExcesoPersonas(max && cantidadPersonas > max);
     };
 
     const handleCantidadPersonasChange = (e) => {
         const cantidad = parseInt(e.target.value);
         setCantidadPersonas(cantidad);
-        const maxPersonas = obtenerMaximoPersonas(lugarSeleccionado);
-        setExcesoPersonas(maxPersonas && cantidad > maxPersonas);
+        const max = obtenerMaximoPersonas(lugarId);
+        setExcesoPersonas(max && cantidad > max);
         const nuevasPersonas = Array.from({ length: cantidad }, (_, i) => personas[i] || {
-            nombre: '',
-            apellido: '',
-            edad: '',
-            discapacidad: false
+            nombre: '', apellido: '', edad: '', discapacidad: false, descripcionDiscapacidad: '', clasificacionEdad: ''
         });
         setPersonas(nuevasPersonas);
     };
 
     const handlePersonaChange = (index, campo, valor) => {
-        const nuevasPersonas = [...personas];
-        nuevasPersonas[index][campo] = valor;
-        setPersonas(nuevasPersonas);
+        const nuevas = [...personas];
+        nuevas[index][campo] = valor;
+        if (campo === 'edad') {
+            nuevas[index].clasificacionEdad = clasificarEdad(valor);
+        }
+        setPersonas(nuevas);
     };
 
-    const handleSubmit = async (e) => {
+    const handleMascotasChange = (e) => setLlevaMascotas(e.target.checked);
+
+    const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (excesoPersonas) {
-            alert('La cantidad de personas excede el m·ximo recomendado para este lugar.');
-            return;
+        if (!usuario?.id) return alert('Debe iniciar sesi√≥n.');
+        if (!lugarId || !fechaInicio || !fechaFin) return alert('Complete todos los campos.');
+
+        const ini = new Date(fechaInicio);
+        const fi = new Date(fechaFin);
+
+        if (ini >= fi) return alert('La fecha inicio debe ser anterior a la fecha fin.');
+        if ((fi - ini) < 60 * 60 * 1000) return alert('Duraci√≥n m√≠nima: 1 hora.');
+
+        if (hayConflictoReserva(fechaInicio, fechaFin)) {
+            return alert('Ya hay una reserva en ese horario.');
         }
 
+        if (excesoPersonas) {
+            return alert('Cantidad de personas excede m√°ximo recomendado.');
+        }
+
+        for (const p of personas) {
+            if (!p.clasificacionEdad) return alert('Ingrese edades v√°lidas.');
+        }
+
+        const tiempoInicioISO = new Date(fechaInicio).toISOString();
+        const tiempoFinISO = new Date(fechaFin).toISOString();
+
         const reserva = {
-            lugarSeleccionado,
+            usuarioId: usuario.id,
+            lugarId: parseInt(lugarId),
             cantidadPersonas,
-            discapacidadGeneral,
-            tiempoInicio,
-            tiempoFin,
+            discapacidad: personas.some(p => p.discapacidad),
+            tiempoInicio: tiempoInicioISO,
+            tiempoFin: tiempoFinISO,
             personasJson: JSON.stringify(personas)
         };
 
-        try {
-            const response = await fetch("https://localhost:7224/api/reservas", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(reserva)
+        fetch('https://localhost:7224/api/reservas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${usuario?.token}`
+            },
+            body: JSON.stringify(reserva)
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al guardar reserva');
+                return res.json();
+            })
+            .then(data => {
+                alert('Reserva guardada con √©xito');
+                navigate('/pagos', { state: data });
+            })
+            .catch(err => {
+                alert(err.message);
             });
-
-            if (!response.ok) {
-                const data = await response.json();
-                console.error("Error del servidor:", data);
-                alert("Error: " + (data.mensaje || "error desconocido"));
-            } else {
-                alert("Reserva enviada correctamente.");
-            }
-        } catch (error) {
-            console.error("Error de red o conexiÛn:", error);
-            alert("No se pudo conectar al servidor.");
-        };
     };
 
+    const lugar = lugares.find(l => l.id === parseInt(lugarId));
+    const dias = fechaInicio && fechaFin ? calcularDiasEntre(fechaInicio, fechaFin) : 1;
+    const total = lugar ? lugar.precio * cantidadPersonas * dias : 0;
+
     return (
-        <div className="container mt-4">
-            <h1>Reservas</h1>
-            <form onSubmit={handleSubmit}>
-                {/* SelecciÛn de lugar */}
-                <div className="mb-3">
-                    <label htmlFor="lugar" className="form-label">Seleccione un lugar:</label>
-                    <select
-                        id="lugar"
-                        className="form-select"
-                        value={lugarSeleccionado}
-                        onChange={handleLugarChange}
-                        required
-                    >
-                        <option value="">-- Elija un lugar --</option>
-                        {lugares.map((lugar) => (
-                            <option key={lugar.id} value={lugar.titulo}>
-                                {lugar.titulo} ({lugar.personasRecomendadas})
-                            </option>
-                        ))}
-                    </select>
-                </div>
+        <Layout>
+            <Box sx={{ p: 4 }}>
+                <Typography variant="h4" gutterBottom>Reservar Lugar</Typography>
+                <form onSubmit={handleSubmit}>
+                    <Grid container spacing={4}>
+                        {/* Lado Izquierdo */}
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 2, height: '600px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <FormControl fullWidth>
+                                    <InputLabel id="lugar-label">Lugar</InputLabel>
+                                    <Select
+                                        labelId="lugar-label"
+                                        value={lugarId}
+                                        label="Lugar"
+                                        onChange={handleLugarChange}
+                                        required
+                                    >
+                                        <MenuItem value="">-- Seleccione --</MenuItem>
+                                        {lugares.map(l => (
+                                            <MenuItem key={l.id} value={l.id}>
+                                                {l.nombre} {l.personasRecomendadas ? `(${l.personasRecomendadas})` : ''}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
 
-                {/* Cantidad de personas */}
-                <div className="mb-3">
-                    <label htmlFor="cantidad" className="form-label">Cantidad de personas:</label>
-                    <input
-                        type="number"
-                        id="cantidad"
-                        className="form-control"
-                        min="1"
-                        max="20"
-                        value={cantidadPersonas}
-                        onChange={handleCantidadPersonasChange}
-                        required
-                    />
-                    {excesoPersonas && (
-                        <div className="alert alert-warning mt-2">
-                            La cantidad de personas excede el m·ximo recomendado para este lugar.
-                        </div>
-                    )}
-                </div>
+                                {lugar && (
+                                    <Card>
+                                        {lugar.imagenUrl && (
+                                            <img src={lugar.imagenUrl} alt={lugar.nombre} style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                                        )}
+                                        <CardContent>
+                                            <Typography variant="h6">{lugar.nombre}</Typography>
+                                            <Typography>{lugar.descripcion}</Typography>
+                                            <Typography><strong>Precio/persona:</strong> ${lugar.precio}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                {/* Discapacidad general */}
-                <div className="mb-3 form-check">
-                    <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="discapacidadGeneral"
-                        checked={discapacidadGeneral}
-                        onChange={(e) => setDiscapacidadGeneral(e.target.checked)}
-                    />
-                    <label className="form-check-label" htmlFor="discapacidadGeneral">
-                        øAlguna persona tiene discapacidad?
-                    </label>
-                </div>
+                                <TextField
+                                    label="Cantidad de Personas"
+                                    type="number"
+                                    inputProps={{ min: 1, max: 20 }}
+                                    value={cantidadPersonas}
+                                    onChange={handleCantidadPersonasChange}
+                                    required
+                                />
+                                {excesoPersonas && (
+                                    <Typography color="warning.main">‚ö†Ô∏è Cantidad excede m√°ximo recomendado.</Typography>
+                                )}
 
-                {/* Tiempo */}
-                <div className="mb-3">
-                    <label className="form-label">Tiempo de visita (desde - hasta):</label>
-                    <div className="d-flex gap-2">
-                        <input
-                            type="time"
-                            className="form-control"
-                            value={tiempoInicio}
-                            onChange={(e) => setTiempoInicio(e.target.value)}
-                            required
-                        />
-                        <span className="mx-2">a</span>
-                        <input
-                            type="time"
-                            className="form-control"
-                            value={tiempoFin}
-                            onChange={(e) => setTiempoFin(e.target.value)}
-                            required
-                        />
-                    </div>
-                </div>
+                                <FormControlLabel
+                                    control={<Checkbox checked={llevaMascotas} onChange={handleMascotasChange} />}
+                                    label="¬øLlevar√° mascotas?"
+                                />
 
-                <hr />
-                <h5>Datos de las personas:</h5>
-                {personas.map((persona, index) => (
-                    <div key={index} className="mb-3 border p-3 rounded">
-                        <div className="mb-2">
-                            <label className="form-label">Nombre:</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={persona.nombre}
-                                onChange={(e) => handlePersonaChange(index, 'nombre', e.target.value)}
-                                required
-                                minLength={2}
-                                pattern="^[A-Za-z¡…Õ”⁄—·ÈÌÛ˙Ò\s]+$"
-                                title="Solo se permiten letras y espacios, mÌnimo 2 caracteres."
-                            />
-                        </div>
-                        <div className="mb-2">
-                            <label className="form-label">Apellido:</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={persona.apellido}
-                                onChange={(e) => handlePersonaChange(index, 'apellido', e.target.value)}
-                                required
-                                minLength={2}
-                                pattern="^[A-Za-z¡…Õ”⁄—·ÈÌÛ˙Ò\s]+$"
-                                title="Solo se permiten letras y espacios, mÌnimo 2 caracteres."
-                            />
-                        </div>
-                        <div className="mb-2">
-                            <label className="form-label">Edad:</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                min="1"
-                                max="120"
-                                value={persona.edad}
-                                onChange={(e) => handlePersonaChange(index, 'edad', e.target.value)}
-                                required
-                                title="Debe ser un n˙mero entre 1 y 120."
-                            />
-                        </div>
-                        <div className="form-check">
-                            <input
-                                type="checkbox"
-                                className="form-check-input"
-                                id={`discapacidad-${index}`}
-                                checked={persona.discapacidad}
-                                onChange={(e) => handlePersonaChange(index, 'discapacidad', e.target.checked)}
-                            />
-                            <label className="form-check-label" htmlFor={`discapacidad-${index}`}>
-                                øTiene discapacidad?
-                            </label>
-                        </div>
-                    </div>
-                ))}
+                                <TextField
+                                    label="Fecha inicio"
+                                    type="datetime-local"
+                                    value={fechaInicio}
+                                    onChange={e => setFechaInicio(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                    required
+                                />
+                                <TextField
+                                    label="Fecha fin"
+                                    type="datetime-local"
+                                    value={fechaFin}
+                                    onChange={e => setFechaFin(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                    required
+                                />
 
-                <button type="submit" className="btn btn-primary mt-3">Enviar reserva</button>
-            </form>
-        </div>
+                                <Divider />
+                                <Typography><strong>Total:</strong> ${total}</Typography>
+                            </Box>
+                        </Grid>
+
+                        {/* Lado Derecho */}
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 2, height: '600px', overflowY: 'auto' }}>
+                                <Typography variant="h6">Personas</Typography>
+                                {personas.length === 0 && (
+                                    <Typography color="text.secondary">Agregue cantidad de personas.</Typography>
+                                )}
+                                {personas.map((p, i) => (
+                                    <Box key={i} sx={{ mb: 2, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
+                                        <Typography>Persona {i + 1} {p.clasificacionEdad && `- ${p.clasificacionEdad}`}</Typography>
+                                        <TextField
+                                            label="Nombre"
+                                            fullWidth
+                                            margin="dense"
+                                            value={p.nombre}
+                                            onChange={e => handlePersonaChange(i, 'nombre', e.target.value)}
+                                            required
+                                        />
+                                        <TextField
+                                            label="Apellido"
+                                            fullWidth
+                                            margin="dense"
+                                            value={p.apellido}
+                                            onChange={e => handlePersonaChange(i, 'apellido', e.target.value)}
+                                            required
+                                        />
+                                        <TextField
+                                            label="Edad"
+                                            type="number"
+                                            fullWidth
+                                            margin="dense"
+                                            value={p.edad}
+                                            onChange={e => handlePersonaChange(i, 'edad', e.target.value)}
+                                            required
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={p.discapacidad}
+                                                    onChange={e => handlePersonaChange(i, 'discapacidad', e.target.checked)}
+                                                />
+                                            }
+                                            label="¬øTiene discapacidad?"
+                                        />
+                                        {p.discapacidad && (
+                                            <TextField
+                                                label="Descripci√≥n discapacidad"
+                                                fullWidth
+                                                margin="dense"
+                                                value={p.descripcionDiscapacidad}
+                                                onChange={e => handlePersonaChange(i, 'descripcionDiscapacidad', e.target.value)}
+                                            />
+                                        )}
+                                    </Box>
+                                ))}
+
+                                <Button variant="contained" type="submit" fullWidth>Confirmar Reserva</Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </form>
+            </Box>
+        </Layout>
     );
 }
 

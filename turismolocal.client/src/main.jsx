@@ -1,16 +1,16 @@
-import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App.jsx';
+// src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme'; // el archivo que creaste
 
-// ? Importa el AuthProvider desde context
-import { AuthProvider } from './context/AuthContext';
-
-createRoot(document.getElementById('root')).render(
-    <StrictMode>
-        <AuthProvider>
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+        <ThemeProvider theme={theme}>
+            <CssBaseline /> {/* Esto normaliza los estilos de forma global */}
             <App />
-        </AuthProvider>
-    </StrictMode>
+        </ThemeProvider>
+    </React.StrictMode>
 );

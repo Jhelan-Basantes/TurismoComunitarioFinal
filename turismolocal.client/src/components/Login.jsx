@@ -1,6 +1,15 @@
 import React, { useState, useContext } from 'react';
+import {
+    Box,
+    Card,
+    CardContent,
+    Typography,
+    TextField,
+    Button,
+    Alert,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // ? Ruta corregida
+import { AuthContext } from '../context/AuthContext';
 
 function Login() {
     const [username, setUsername] = useState('');
@@ -16,47 +25,82 @@ function Login() {
             const res = await fetch('https://localhost:7224/api/Auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password }),
             });
 
             if (res.ok) {
                 const data = await res.json();
+                const userData = {
+                    id: data.id,
+                    username: data.username,
+                    role: data.role,
+                    token: data.token,
+                };
 
-                // Si el backend devuelve el nombre del usuario:
-                login(data.username || username);  // ? usa el que venga del servidor, o el ingresado
-
-                localStorage.setItem("token", data.token);
+                login(userData);
+                localStorage.setItem('usuario', JSON.stringify(userData));
                 navigate('/');
             } else {
-                setMessage("Usuario o contrase\u00F1a incorrectos");
+                setMessage('Usuario o contraseña incorrectos');
             }
         } catch (error) {
-            console.error("Error al conectar con el servidor:", error);
-            setMessage("Error de conexi�n con el servidor.");
+            console.error('Error al conectar con el servidor:', error);
+            setMessage('Error de conexión con el servidor.');
         }
     };
 
     return (
-        <div style={{ textAlign: 'center' }}>
-            <h2>Iniciar Sesi&oacute;n</h2>
-            {message && <p style={{ color: 'red' }}>{message}</p>}
-            <form onSubmit={handleSubmit}>
-                <input
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="Usuario"
-                    required
-                /><br /><br />
-                <input
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="Contrase&ntilde;a"
-                    required
-                /><br /><br />
-                <button type="submit">Entrar</button>
-            </form>
-        </div>
+        <Box
+            sx={{
+                height: '100vh',
+                bgcolor: '#f0f4f8',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}
+        >
+            <Card sx={{ width: 400, p: 2, boxShadow: 6 }}>
+                <CardContent>
+                    <Typography variant="h5" gutterBottom align="center">
+                        Iniciar Sesión
+                    </Typography>
+
+                    {message && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                            {message}
+                        </Alert>
+                    )}
+
+                    <Box component="form" onSubmit={handleSubmit} noValidate>
+                        <TextField
+                            fullWidth
+                            label="Usuario"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            margin="normal"
+                            required
+                        />
+                        <TextField
+                            fullWidth
+                            label="Contraseña"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            margin="normal"
+                            required
+                        />
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            fullWidth
+                            sx={{ mt: 2 }}
+                        >
+                            Entrar
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+        </Box>
     );
 }
 

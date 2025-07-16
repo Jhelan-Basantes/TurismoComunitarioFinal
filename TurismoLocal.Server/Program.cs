@@ -13,11 +13,13 @@ if (string.IsNullOrEmpty(secret))
 
 var key = Encoding.ASCII.GetBytes(secret);
 
-// Configuración de DbContext
+// ConfiguraciÃ³n de DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configuración de Autenticación JWT
+
+
+// ConfiguraciÃ³n de AutenticaciÃ³n JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

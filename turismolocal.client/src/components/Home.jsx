@@ -1,81 +1,199 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '../components/layout/Layout';
 import Carousel from 'react-bootstrap/Carousel';
+import {
+    TextField,
+    InputAdornment,
+    IconButton,
+    Box,
+    Typography,
+    Autocomplete,
+    Grid,
+    Card,
+    CardMedia,
+    CardContent,
+    CardActionArea,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 function Home() {
+    const [lugares, setLugares] = useState([]);
+    const [busqueda, setBusqueda] = useState('');
+    const [seleccionado, setSeleccionado] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        fetch('https://localhost:7224/api/lugares')
+            .then(res => {
+                if (!res.ok) throw new Error('Error al cargar lugares');
+                return res.json();
+            })
+            .then(data => {
+                setLugares(data);
+                setCargando(false);
+            })
+            .catch(err => {
+                setError(err.message);
+                setCargando(false);
+            });
+    }, []);
+
+    const handleBuscar = () => {
+        if (seleccionado) {
+            navigate(`/lugar/${seleccionado.id}`);
+        } else {
+            navigate(`/lugar?query=${encodeURIComponent(busqueda)}`);
+        }
+    };
+
+    const lugaresAleatorios = (arr, n) => {
+        const copia = [...arr];
+        const seleccionados = [];
+        while (seleccionados.length < n && copia.length > 0) {
+            const idx = Math.floor(Math.random() * copia.length);
+            seleccionados.push(copia.splice(idx, 1)[0]);
+        }
+        return seleccionados;
+    };
+
+    if (cargando) return <p>Cargando lugares...</p>;
+    if (error) return <p>Error: {error}</p>;
+
+    const destacados = lugaresAleatorios(lugares, 3);
+
     return (
-        <div>
-            {/* Encabezado verde que ocupa toda la altura visible */}
-            <div
-                className="bg-success text-white d-flex flex-column justify-content-center align-items-center text-center"
-                style={{ height: '20vh' }}
-            >
-                <h1 className="display-4">Turismo Comunitario</h1>
-                <p className="fs-4">¡Visita todo lo que tenemos por ofrecer!</p>
-            </div>
+        <Layout>
+            {/* Carrusel al tope absoluto */}
+            <Box sx={{ position: 'relative', width: '100%', height: '400px', overflow: 'hidden', mt: '-64px' }}>
+                <Carousel
+                    controls={false}
+                    indicators={false}
+                    interval={10000}
+                    fade
+                    slide={true}
+                    pause={false} // <-- fuerza que no se detenga
+                >
+                    {destacados.map((lugar, idx) => (
+                        <Carousel.Item key={idx}>
+                            <img
+                                src={lugar.imagenUrl}
+                                alt={lugar.nombre}
+                                style={{
+                                    width: '100%',
+                                    height: '400px',
+                                    objectFit: 'cover',
+                                    filter: 'brightness(60%)',
+                                }}
+                            />
+                        </Carousel.Item>
+                    ))}
+                </Carousel>
 
-            {/* Carrusel con margen superior para separarlo visualmente */}
-            <Carousel className="mt-5">
-                <Carousel.Item>
-                    <h3 className="bg-dark bg-opacity-75 text-white py-2 rounded-top text-center">
-                        Centro Cultural y Turístico Pucará Tambo
-                    </h3>
+                {/* Contenido sobre el carrusel */}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: 'white',
+                        textAlign: 'center',
+                        px: 2,
+                        zIndex: 1,
+                    }}
+                >
+                    <Typography variant="h3" fontWeight="bold" sx={{ mb: 3 }}>
+                        Turismo Comunitario
+                    </Typography>
 
-                    <div className="d-flex align-items-center p-3">
-                        <img
-                            className="d-block"
-                            src="https://img.goraymi.com/2017/06/29/6e907279ced5922fe43d1956fbb1f3d4_xl.jpg"
-                            alt="Imagen 1"
-                            style={{ width: '60%', objectFit: 'cover', borderRadius: '8px' }}
-                        />
-                        <div className="bg-dark bg-opacity-50 rounded text-white p-3 ms-3" style={{ flex: 1 }}>
-                            <p>
-                                El Centro Cultural y Turístico Pucará Tambo, con una imponente vista panorámica de Riobamba, ofrece la oportunidad de hospedarte en su comunidad para vivir experiencias culturales, gastronómicas y de aventura.
-                            </p>
-                        </div>
-                    </div>
-                </Carousel.Item>
+                    <Autocomplete
+                        freeSolo
+                        options={
+                            busqueda.length > 0
+                                ? lugares.filter((l) =>
+                                    l.nombre.toLowerCase().includes(busqueda.toLowerCase())
+                                ).slice(0, 5)
+                                : []
+                        }
+                        getOptionLabel={(option) => option.nombre}
+                        onInputChange={(e, value) => setBusqueda(value)}
+                        onChange={(e, value) => {
+                            setSeleccionado(value);
+                            setBusqueda(value ? value.nombre : '');
+                        }}
+                        sx={{
+                            width: '90%',
+                            maxWidth: 600,
+                            backgroundColor: 'white',
+                            borderRadius: 2,
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="Buscar destino..."
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={handleBuscar} edge="end" color="primary">
+                                                <SearchIcon />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
+                </Box>
+            </Box>
 
-                <Carousel.Item>
-                    <h3 className="bg-dark bg-opacity-75 text-white py-2 rounded-top text-center">
-                        Ubicación a 3.116 msnm en Cacha
-                    </h3>
-
-                    <div className="d-flex align-items-center p-3">
-                        <img
-                            className="d-block"
-                            src="https://img.goraymi.com/2017/06/29/7f7bb6a0bc297851a5354eac5761cfd0_xl.jpg"
-                            alt="Imagen 2"
-                            style={{ width: '60%', objectFit: 'cover', borderRadius: '8px' }}
-                        />
-                        <div className="bg-dark bg-opacity-50 rounded text-white p-3 ms-3" style={{ flex: 1 }}>
-                            <p>
-                                El Centro Cultural y Turístico Pucará Tambo, se encuentra localizado a una altitud de 3.116 msnm en la parroquia rural Cacha a 11 km de Riobamba.
-                            </p>
-                        </div>
-                    </div>
-                </Carousel.Item>
-
-                <Carousel.Item>
-                    <h3 className="bg-dark bg-opacity-75 text-white py-2 rounded-top text-center">
-                        Servicios Turísticos Consolidados
-                    </h3>
-
-                    <div className="d-flex align-items-center p-3">
-                        <img
-                            className="d-block"
-                            src="https://img.goraymi.com/2017/06/29/431999099335f8d50cc43ecf0af4bee9_xl.jpg"
-                            alt="Imagen 3"
-                            style={{ width: '60%', objectFit: 'cover', borderRadius: '8px' }}
-                        />
-                        <div className="bg-dark bg-opacity-50 rounded text-white p-3 ms-3" style={{ flex: 1 }}>
-                            <p>
-                                En el centro de servicios turísticos se brindan productos consolidados como hospedaje, alimentación, museo, artesanías y guía para los atractivos naturales y culturales del sector.
-                            </p>
-                        </div>
-                    </div>
-                </Carousel.Item>
-            </Carousel>
-        </div>
+            {/* Recomendaciones */}
+            <Box sx={{ mt: 6, px: 3 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+                    Recomendaciones para ti
+                </Typography>
+                <Grid container spacing={3}>
+                    {destacados.map((lugar) => (
+                        <Grid item xs={12} sm={6} md={4} key={lugar.id}>
+                            <Card
+                                sx={{
+                                    width: 320,
+                                    height: 320,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    boxShadow: 3,
+                                }}
+                            >
+                                <CardActionArea onClick={() => navigate(`/lugar/${lugar.id}`)}>
+                                    <CardMedia
+                                        component="img"
+                                        height="100"
+                                        image={lugar.imagenUrl}
+                                        alt={lugar.nombre}
+                                    />
+                                    <CardContent sx={{ minHeight: '400px' }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            {lugar.nombre}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {lugar.descripcion.slice(0, 100)}...
+                                        </Typography>
+                                    </CardContent>
+                                </CardActionArea>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+        </Layout>
     );
 }
 

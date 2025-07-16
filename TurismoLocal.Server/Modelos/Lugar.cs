@@ -12,6 +12,5 @@ public class Lugar
     public string? Categoria { get; set; }
     public int IdGuia { get; set; }
 
-    // Relaciones opcionales:
-    // public Usuario? Guia { get; set; }
+    public string? ImagenUrl { get; set; }  // Nueva propiedad para URL de imagen
 }

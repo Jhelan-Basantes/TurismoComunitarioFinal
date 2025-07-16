@@ -20,7 +20,7 @@ import StarIcon from '@mui/icons-material/Star';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
-function Catalogo() {
+function Wishlist() {
     const navigate = useNavigate();
     const { usuario } = useContext(AuthContext);
     const usuarioId = usuario?.id;
@@ -86,21 +86,21 @@ function Catalogo() {
         }
     };
 
-
     const eliminarLugar = (id) => {
-        // Aquí puedes implementar la lógica para eliminar un lugar si eres administrador o guía
         alert(`Eliminar lugar con ID ${id} (funcionalidad no implementada aquí)`);
     };
 
+    // 🔍 Filtrar por texto Y que esté en la wishlist
     const lugaresFiltrados = lugares.filter(lugar =>
-        lugar.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        lugar.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+        wishlist.includes(lugar.id) &&
+        (lugar.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+            lugar.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
     );
 
     return (
         <Box sx={{ px: 4, py: 6 }}>
             <Typography variant="h4" gutterBottom align="center">
-                Catálogo de Lugares
+                Mis Lugares Favoritos
             </Typography>
 
             <Box
@@ -119,7 +119,7 @@ function Catalogo() {
             >
                 <SearchIcon color="action" />
                 <InputBase
-                    placeholder="Buscar lugar"
+                    placeholder="Buscar en favoritos"
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     sx={{ ml: 1, flex: 1 }}
@@ -127,7 +127,7 @@ function Catalogo() {
             </Box>
 
             {lugaresFiltrados.length === 0 ? (
-                <Alert severity="info">No se encontraron resultados para "{busqueda}"</Alert>
+                <Alert severity="info">No hay lugares favoritos que coincidan con "{busqueda}"</Alert>
             ) : (
                 <Grid container spacing={4} justifyContent="center">
                     {lugaresFiltrados.map(lugar => {
@@ -240,4 +240,4 @@ function Catalogo() {
     );
 }
 
-export default Catalogo;
+export default Wishlist;
