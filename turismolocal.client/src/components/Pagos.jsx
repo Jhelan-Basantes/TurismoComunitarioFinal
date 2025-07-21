@@ -1,119 +1,241 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useContext} from 'react';
+import { useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+
 import {
-    Box,
+    Container,
     Typography,
-    FormControl,
-    InputLabel,
+    Paper,
+    TextField,
     Select,
     MenuItem,
-    Button,
-    Card,
-    CardContent,
-    Grid
+    FormControl,
+    InputLabel,
+    Alert,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    InputAdornment,
+    Box
 } from '@mui/material';
-import Layout from '../components/layout/Layout';
+
+import PaymentIcon from '@mui/icons-material/Payment';
+import PeopleIcon from '@mui/icons-material/People';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { LoadingButton } from '@mui/lab';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { CircularProgress } from '@mui/material';
+
+import confetti from 'canvas-confetti';
 
 function Pagos() {
+    const { usuario } = useContext(AuthContext);
     const location = useLocation();
-    const navigate = useNavigate();
     const reserva = location.state;
 
-    const [metodoPago, setMetodoPago] = useState('');
+    const [montoIngresado, setMontoIngresado] = useState('');
+    const [metodoPago, setMetodoPago] = useState('Efectivo');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [pagoExitoso, setPagoExitoso] = useState(false);
+    const [mensajeFinal, setMensajeFinal] = useState('');
+
+
+    if (!reserva) {
+        return (
+            <Container sx={{ mt: 4 }}>
+                <Alert severity="error">No hay información de reserva. Regrese e intente de nuevo.</Alert>
+            </Container>
+        );
+    }
+
+    const lanzarConfetti = () => {
+        confetti({
+            particleCount: 200,
+            spread: 90,
+            origin: { y: 0.6 }
+        });
+    };
 
     const handlePago = async () => {
-        if (!metodoPago) {
-            alert('Seleccione un método de pago');
+        const montoFloat = parseFloat(montoIngresado);
+
+        if (
+            !montoIngresado ||
+            isNaN(montoFloat) ||
+            montoFloat <= 0 ||
+            montoFloat !== reserva.valorTotal
+        ) {
+            setMensajeFinal(`Debe ingresar exactamente el valor total de la reserva: $${reserva.valorTotal.toFixed(2)}`);
             return;
         }
 
-        // Verificar que reservaId exista
-        if (!reserva.id && !reserva.reservaId) {
-            alert('No se encontró el ID de la reserva. Primero debe crear la reserva.');
-            return;
-        }
-
-        const pago = {
-            reservaId: reserva.id ?? reserva.reservaId,
-            monto: reserva.valorTotal,
-            metodoPago: metodoPago,
-            estadoPago: "Completado"
-            // No se incluye fechaPago porque el backend puede asignarla automáticamente
+        const reservaPayload = {
+            usuarioId: reserva.usuarioId,
+            lugarId: reserva.lugarId,
+            cantidadPersonas: reserva.cantidadPersonas,
+            discapacidad: reserva.discapacidad,
+            tiempoInicio: new Date(reserva.tiempoInicio).toISOString(),
+            tiempoFin: new Date(reserva.tiempoFin).toISOString(),
+            personasJson: JSON.stringify(reserva.personas)
         };
 
         try {
-            const res = await fetch('https://localhost:7224/api/pagos', {
+            const resReserva = await fetch('https://localhost:7224/api/reservas', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pago)
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${usuario?.token}`
+                },
+                body: JSON.stringify(reservaPayload)
             });
 
-            if (res.ok) {
-                alert('Pago registrado correctamente');
-                navigate('/');
-            } else {
-                const msg = await res.text();
-                alert('Error al registrar el pago: ' + msg);
+            if (!resReserva.ok) {
+                const data = await resReserva.json();
+                throw new Error(data.mensaje || 'Error al crear la reserva.');
             }
-        } catch (err) {
-            alert('Error de red: ' + err);
+
+            const reservaCreada = await resReserva.json();
+
+            const pagoPayload = {
+                reservaId: reservaCreada.id,
+                monto: montoFloat,
+                metodoPago: metodoPago,
+                estadoPago: 'Completado'
+            };
+
+            const resPago = await fetch('https://localhost:7224/api/pagos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${usuario?.token}`
+                },
+                body: JSON.stringify(pagoPayload)
+            });
+
+            if (!resPago.ok) {
+                const data = await resPago.json();
+                throw new Error(data.mensaje || 'Error al registrar el pago.');
+            }
+
+            setPagoExitoso(true);
+            lanzarConfetti();
+            setMensajeFinal('¡Pago registrado y reserva confirmada con éxito!');
+
+        } catch (error) {
+            console.error(error);
+            setMensajeFinal(error.message);
         }
     };
 
     return (
-        <Layout>
-            <Box sx={{ p: 4 }}>
-                <Typography variant="h4" gutterBottom>Confirmar Pago</Typography>
-                <Grid container spacing={4}>
-                    <Grid item xs={12} md={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6">Resumen de Reserva</Typography>
-                                <Typography><strong>Lugar ID:</strong> {reserva.lugarId}</Typography>
-                                <Typography><strong>Personas:</strong> {reserva.cantidadPersonas}</Typography>
-                                <Typography><strong>Desde:</strong> {new Date(reserva.tiempoInicio).toLocaleString()}</Typography>
-                                <Typography><strong>Hasta:</strong> {new Date(reserva.tiempoFin).toLocaleString()}</Typography>
-                                <Typography><strong>Mascotas:</strong> {reserva.llevaMascotas ? 'Sí' : 'No'}</Typography>
-                                <Typography><strong>Discapacidad:</strong> {reserva.discapacidad ? 'Sí' : 'No'}</Typography>
-                                <Typography><strong>Total a Pagar:</strong> ${reserva.valorTotal}</Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+        <Container maxWidth="sm" sx={{ mt: 5 }}>
+            <Paper elevation={3} sx={{ p: 4 }}>
+                <Typography variant="h4" gutterBottom align="center">
+                    <PaymentIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                    Confirmar Pago
+                </Typography>
 
-                    <Grid item xs={12} md={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>Método de Pago</Typography>
-                                <FormControl fullWidth>
-                                    <InputLabel id="metodo-pago-label">Método de pago</InputLabel>
-                                    <Select
-                                        labelId="metodo-pago-label"
-                                        value={metodoPago}
-                                        onChange={(e) => setMetodoPago(e.target.value)}
-                                        label="Método de pago"
-                                    >
-                                        <MenuItem value="">-- Seleccione --</MenuItem>
-                                        <MenuItem value="Transferencia">Transferencia</MenuItem>
-                                        <MenuItem value="Tarjeta">Tarjeta</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <Box sx={{ mt: 3 }}>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        onClick={handlePago}
-                                        disabled={!metodoPago}
-                                    >
-                                        Confirmar Pago
-                                    </Button>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-            </Box>
-        </Layout>
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    <strong>Valor Total de la Reserva:</strong> ${reserva.valorTotal.toFixed(2)}
+                </Alert>
+
+                <Typography variant="h6" gutterBottom>
+                    <PeopleIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                    Personas que asistirán:
+                </Typography>
+
+                <List dense sx={{ mb: 3 }}>
+                    {reserva.personas.map((p, i) => (
+                        <React.Fragment key={i}>
+                            <ListItem>
+                                <ListItemText
+                                    primary={`${p.nombre} ${p.apellido} - Edad: ${p.edad}`}
+                                    secondary={
+                                        p.discapacidad
+                                            ? `Discapacidad: ${p.descripcionDiscapacidad || 'N/A'}`
+                                            : null
+                                    }
+                                />
+                            </ListItem>
+                            <Divider />
+                        </React.Fragment>
+                    ))}
+                </List>
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel>Método de Pago</InputLabel>
+                    <Select
+                        value={metodoPago}
+                        label="Método de Pago"
+                        onChange={(e) => setMetodoPago(e.target.value)}
+                        startAdornment={<CreditCardIcon sx={{ mr: 1 }} />}
+                    >
+                        <MenuItem value="Tarjeta de Crédito">Tarjeta de Crédito</MenuItem>
+                        <MenuItem value="Transferencia Bancaria">Transferencia Bancaria</MenuItem>
+                        <MenuItem value="Efectivo">Efectivo</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <TextField
+                    fullWidth
+                    type="number"
+                    label="Ingrese el valor a pagar"
+                    value={montoIngresado}
+                    onChange={(e) => setMontoIngresado(e.target.value)}
+                    inputProps={{ min: 0, step: 0.01 }}
+                    sx={{ mb: 4 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <AttachMoneyIcon />
+                            </InputAdornment>
+                        )
+                    }}
+                />
+
+                <LoadingButton
+                    variant="contained"
+                    color={pagoExitoso ? "success" : "primary"}
+                    loading={isProcessing}
+                    loadingIndicator={<CircularProgress size={24} color="inherit" />}
+                    startIcon={pagoExitoso ? <CheckCircleIcon /> : <PaymentIcon />}
+                    onClick={async () => {
+                        setMensajeFinal('');
+                        setIsProcessing(true);
+                        await handlePago();
+                        setIsProcessing(false);
+                    }}
+                    sx={{
+                        mt: 2,
+                        fontWeight: 'bold',
+                        paddingX: 3,
+                        paddingY: 1.2,
+                        borderRadius: '12px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: 3,
+                        '&:hover': {
+                            boxShadow: 6,
+                            transform: 'scale(1.03)',
+                        },
+                    }}
+                >
+                    {pagoExitoso ? 'Pago Confirmado' : 'Registrar Pago y Confirmar Reserva'}
+                </LoadingButton>
+
+                {mensajeFinal && (
+                    <Alert
+                        severity={pagoExitoso ? 'success' : 'warning'}
+                        sx={{ mt: 4 }}
+                    >
+                        {mensajeFinal}
+                    </Alert>
+                )}
+            </Paper>
+        </Container>
     );
 }
 
 export default Pagos;
+ 

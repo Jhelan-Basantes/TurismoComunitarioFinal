@@ -1,22 +1,46 @@
 // src/theme.js
 import { createTheme } from '@mui/material/styles';
 
-const theme = createTheme({
+export const lightTheme = createTheme({
     palette: {
-        mode: 'light', // Cambia a 'dark' si quieres modo oscuro por defecto
+        mode: 'light',
+        background: {
+            default: '#FAFAFA',
+            paper: '#FFFFFF',
+        },
+        text: {
+            primary: '#000000',
+        },
         primary: {
-            main: '#0B4B54', // Azul MUI por defecto, puedes cambiar
+            main: '#4A7766',
         },
         secondary: {
-            main: '#ff4081', // Rosa fuerte
-        },
-        background: {
-            default: '#f5f5f5',
+            main: '#000000',
         },
     },
     typography: {
-        fontFamily: 'Roboto, Arial, sans-serif',
+        fontFamily: 'Poppins, sans-serif',
     },
 });
 
-export default theme;
+export const darkTheme = createTheme({
+    palette: {
+        mode: 'dark',
+        background: {
+            default: '#312F2C',
+            paper: '#383634',
+        },
+        text: {
+            primary: '#FAFAFA',
+        },
+        primary: {
+            main: '#4A7766',
+        },
+        secondary: {
+            main: '#FAFAFA',
+        },
+    },
+    typography: {
+        fontFamily: 'Poppins, sans-serif',
+    },
+});

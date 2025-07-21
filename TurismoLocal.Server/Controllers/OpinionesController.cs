@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TurismoLocal.Server.Data;
 using TurismoLocal.Server.Modelos;
@@ -28,6 +28,19 @@ public class OpinionesController : ControllerBase
         var opinion = await _context.Opiniones.FindAsync(id);
         return opinion == null ? NotFound() : Ok(opinion);
     }
+
+    //Método promedios de calificaciones
+    [HttpGet("promedios")]
+    public async Task<ActionResult<Dictionary<int, double>>> GetPromedioPorLugar()
+    {
+        var promedios = await _context.Opiniones
+            .GroupBy(o => o.LugarId)
+            .Select(g => new { LugarId = g.Key, Promedio = g.Average(o => o.Calificacion) })
+            .ToDictionaryAsync(g => g.LugarId, g => Math.Round(g.Promedio, 1));
+
+        return Ok(promedios);
+    }
+    //Last update: 20:00
 
     [HttpPost]
     public async Task<ActionResult<Opinion>> PostOpinion(Opinion opinion)

@@ -2,15 +2,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme'; // el archivo que creaste
+
+import '@fontsource/poppins/300.css';
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/600.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <ThemeProvider theme={theme}>
-            <CssBaseline /> {/* Esto normaliza los estilos de forma global */}
-            <App />
-        </ThemeProvider>
+        <App />
     </React.StrictMode>
 );

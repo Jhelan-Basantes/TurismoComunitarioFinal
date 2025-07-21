@@ -19,6 +19,7 @@ function Registro() {
         username: '',
         password: '',
         email: '',
+        telefono: '',
         role: 'Turista',
     });
 
@@ -105,6 +106,16 @@ function Registro() {
                     required
                     fullWidth
                     margin="normal"
+                />
+
+                <TextField
+                    label="Teléfono"
+                    name="telefono"
+                    value={form.telefono}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    placeholder="Opcional"
                 />
 
                 <TextField

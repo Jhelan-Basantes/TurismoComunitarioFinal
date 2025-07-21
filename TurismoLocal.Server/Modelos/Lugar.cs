@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace TurismoLocal.Server.Modelos;
 
@@ -12,5 +12,5 @@ public class Lugar
     public string? Categoria { get; set; }
     public int IdGuia { get; set; }
 
-    public string? ImagenUrl { get; set; }  // Nueva propiedad para URL de imagen
+    public string? ImagenUrl { get; set; }  
 }

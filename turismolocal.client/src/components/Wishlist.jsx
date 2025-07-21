@@ -30,31 +30,38 @@ function Wishlist() {
     const [busqueda, setBusqueda] = useState('');
     const [calificaciones, setCalificaciones] = useState({});
     const [wishlist, setWishlist] = useState([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        fetch('https://localhost:7224/api/lugares')
-            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar lugares'))
-            .then(setLugares)
-            .catch(console.error);
+        const fetchData = async () => {
+            try {
+                const lugaresRes = await fetch('https://localhost:7224/api/lugares');
+                if (!lugaresRes.ok) throw new Error('Error al cargar lugares');
+                const lugaresData = await lugaresRes.json();
+                setLugares(lugaresData);
 
-        fetch('https://localhost:7224/api/opiniones/promedios')
-            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar calificaciones'))
-            .then(setCalificaciones)
-            .catch(console.error);
+                const calificacionesRes = await fetch('https://localhost:7224/api/opiniones/promedios');
+                if (!calificacionesRes.ok) throw new Error('Error al cargar calificaciones');
+                const calificacionesData = await calificacionesRes.json();
+                setCalificaciones(calificacionesData);
 
-        if (usuarioId) {
-            fetch(`https://localhost:7224/api/usuarios/${usuarioId}`, {
-                headers: { Authorization: `Bearer ${usuario.token}` }
-            })
-                .then(res => res.ok ? res.json() : Promise.reject('Error al cargar wishlist'))
-                .then(data => {
-                    if (data.wishlist) {
-                        const parsed = JSON.parse(data.wishlist);
-                        setWishlist(Array.isArray(parsed) ? parsed : []);
-                    }
-                })
-                .catch(console.error);
-        }
+                if (usuarioId) {
+                    const usuarioRes = await fetch(`https://localhost:7224/api/usuarios/${usuarioId}`, {
+                        headers: { Authorization: `Bearer ${usuario.token}` }
+                    });
+                    if (!usuarioRes.ok) throw new Error('Error al cargar wishlist');
+                    const usuarioData = await usuarioRes.json();
+
+                    const parsed = JSON.parse(usuarioData.wishlist || '[]');
+                    setWishlist(Array.isArray(parsed) ? parsed : []);
+                }
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            }
+        };
+
+        fetchData();
     }, [usuarioId, usuario]);
 
     const verDetalle = (id) => navigate(`/lugar/${id}`);
@@ -90,7 +97,6 @@ function Wishlist() {
         alert(`Eliminar lugar con ID ${id} (funcionalidad no implementada aquí)`);
     };
 
-    // 🔍 Filtrar por texto Y que esté en la wishlist
     const lugaresFiltrados = lugares.filter(lugar =>
         wishlist.includes(lugar.id) &&
         (lugar.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -125,6 +131,12 @@ function Wishlist() {
                     sx={{ ml: 1, flex: 1 }}
                 />
             </Box>
+
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                </Alert>
+            )}
 
             {lugaresFiltrados.length === 0 ? (
                 <Alert severity="info">No hay lugares favoritos que coincidan con "{busqueda}"</Alert>

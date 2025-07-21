@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using TurismoLocal.Server.Data;
 using TurismoLocal.Server.Modelos;
 
@@ -28,6 +30,29 @@ public class UsuariosController : ControllerBase
         var usuario = await _context.Usuarios.FindAsync(id);
         return usuario == null ? NotFound() : Ok(usuario);
     }
+    [HttpGet("perfil")]
+    [Authorize]
+    public async Task<IActionResult> ObtenerPerfil()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        var usuario = await _context.Usuarios
+            .Where(u => u.Id.ToString() == userId)
+            .Select(u => new {
+                u.Id,
+                u.Username,
+                u.Email,
+                u.Telefono,
+                Role = u.Role
+            })
+            .FirstOrDefaultAsync();
+
+        if (usuario == null)
+            return NotFound();
+
+        return Ok(usuario);
+    }
+
 
     [HttpPost]
     public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
@@ -55,6 +80,27 @@ public class UsuariosController : ControllerBase
 
         return NoContent();
     }
+
+    //Método Wishlist PUT + DTO 
+    [HttpPut("{id}/wishlist")]
+    [Authorize]
+    public async Task<IActionResult> ActualizarWishlist(int id, [FromBody] WishlistDto dto)
+    {
+        var usuario = await _context.Usuarios.FindAsync(id);
+        if (usuario == null) return NotFound();
+
+        usuario.Wishlist = dto.Wishlist;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    public class WishlistDto
+    {
+        public string Wishlist { get; set; } = string.Empty;
+    }
+
+    //último update: 19:47
+
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUsuario(int id)

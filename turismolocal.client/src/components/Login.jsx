@@ -7,6 +7,8 @@ import {
     TextField,
     Button,
     Alert,
+    Stack,
+    Link,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -98,6 +100,20 @@ function Login() {
                             Entrar
                         </Button>
                     </Box>
+
+                    <Stack direction="row" justifyContent="center" mt={2}>
+                        <Typography variant="body2">
+                            ¿No tienes cuenta?{' '}
+                            <Link
+                                component="button"
+                                variant="body2"
+                                onClick={() => navigate('/registro')}
+                                sx={{ textDecoration: 'underline' }}
+                            >
+                                Regístrate
+                            </Link>
+                        </Typography>
+                    </Stack>
                 </CardContent>
             </Card>
         </Box>

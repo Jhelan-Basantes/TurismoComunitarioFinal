@@ -1,11 +1,10 @@
 import React, { createContext, useState, useEffect } from 'react';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+const AuthProvider = ({ children }) => {
     const [usuario, setUsuario] = useState(null);
 
-    // Restaurar sesión desde localStorage al cargar la app
     useEffect(() => {
         const storedUser = localStorage.getItem("usuario");
         if (storedUser) {
@@ -28,5 +27,6 @@ export function AuthProvider({ children }) {
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
+export { AuthContext, AuthProvider };

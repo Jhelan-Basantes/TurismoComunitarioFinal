@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// Home.jsx
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import Carousel from 'react-bootstrap/Carousel';
@@ -14,6 +15,7 @@ import {
     CardMedia,
     CardContent,
     CardActionArea,
+    CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -25,6 +27,8 @@ function Home() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    const recomendacionesRef = useRef([]);
+
     useEffect(() => {
         fetch('https://localhost:7224/api/lugares')
             .then(res => {
@@ -33,6 +37,7 @@ function Home() {
             })
             .then(data => {
                 setLugares(data);
+                recomendacionesRef.current = seleccionarAleatorios(data, 3);
                 setCargando(false);
             })
             .catch(err => {
@@ -41,15 +46,7 @@ function Home() {
             });
     }, []);
 
-    const handleBuscar = () => {
-        if (seleccionado) {
-            navigate(`/lugar/${seleccionado.id}`);
-        } else {
-            navigate(`/lugar?query=${encodeURIComponent(busqueda)}`);
-        }
-    };
-
-    const lugaresAleatorios = (arr, n) => {
+    const seleccionarAleatorios = (arr, n) => {
         const copia = [...arr];
         const seleccionados = [];
         while (seleccionados.length < n && copia.length > 0) {
@@ -59,40 +56,76 @@ function Home() {
         return seleccionados;
     };
 
-    if (cargando) return <p>Cargando lugares...</p>;
-    if (error) return <p>Error: {error}</p>;
+    const destacadosCarrusel = seleccionarAleatorios(lugares, 3);
+    const recomendaciones = recomendacionesRef.current;
 
-    const destacados = lugaresAleatorios(lugares, 3);
+    const handleBuscar = () => {
+        if (seleccionado) {
+            navigate(`/lugar/${seleccionado.id}`);
+        } else if (busqueda.trim() !== '') {
+            const resultado = lugares.find(l =>
+                l.nombre.toLowerCase().includes(busqueda.toLowerCase())
+            );
+            if (resultado) {
+                navigate(`/lugar/${resultado.id}`);
+            } else {
+                navigate('/catalogo');
+            }
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleBuscar();
+        }
+    };
+
+    if (cargando) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) return <p>Error: {error}</p>;
 
     return (
         <Layout>
-            {/* Carrusel al tope absoluto */}
-            <Box sx={{ position: 'relative', width: '100%', height: '400px', overflow: 'hidden', mt: '-64px' }}>
+            {/* Carrusel */}
+            <Box sx={{
+                position: 'relative',
+                width: '100vw',
+                height: { xs: '300px', md: '600px' },
+                overflow: 'hidden',
+                mt: '-64px',
+                mb: 4
+            }}>
                 <Carousel
                     controls={false}
                     indicators={false}
-                    interval={10000}
+                    interval={5000}
                     fade
                     slide={true}
-                    pause={false} // <-- fuerza que no se detenga
+                    pause={false}
                 >
-                    {destacados.map((lugar, idx) => (
+                    {destacadosCarrusel.map((lugar, idx) => (
                         <Carousel.Item key={idx}>
                             <img
                                 src={lugar.imagenUrl}
                                 alt={lugar.nombre}
                                 style={{
                                     width: '100%',
-                                    height: '400px',
+                                    height: '100%',
                                     objectFit: 'cover',
-                                    filter: 'brightness(60%)',
+                                    filter: 'brightness(60%)'
                                 }}
                             />
                         </Carousel.Item>
                     ))}
                 </Carousel>
 
-                {/* Contenido sobre el carrusel */}
+                {/* Overlay con texto y buscador */}
                 <Box
                     sx={{
                         position: 'absolute',
@@ -139,6 +172,7 @@ function Home() {
                             <TextField
                                 {...params}
                                 placeholder="Buscar destino..."
+                                onKeyDown={handleKeyPress}
                                 InputProps={{
                                     ...params.InputProps,
                                     endAdornment: (
@@ -156,30 +190,35 @@ function Home() {
             </Box>
 
             {/* Recomendaciones */}
-            <Box sx={{ mt: 6, px: 3 }}>
+            <Box sx={{ mt: 4, px: { xs: 2, md: 6 } }}>
                 <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
                     Recomendaciones para ti
                 </Typography>
-                <Grid container spacing={3}>
-                    {destacados.map((lugar) => (
+                <Grid container spacing={4}>
+                    {recomendaciones.map((lugar) => (
                         <Grid item xs={12} sm={6} md={4} key={lugar.id}>
                             <Card
                                 sx={{
-                                    width: 320,
-                                    height: 320,
+                                    width: '100%',
+                                    height: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     boxShadow: 3,
+                                    borderRadius: 3,
+                                    transition: 'transform 0.3s',
+                                    '&:hover': {
+                                        transform: 'scale(1.03)'
+                                    }
                                 }}
                             >
                                 <CardActionArea onClick={() => navigate(`/lugar/${lugar.id}`)}>
                                     <CardMedia
                                         component="img"
-                                        height="100"
+                                        height="200"
                                         image={lugar.imagenUrl}
                                         alt={lugar.nombre}
                                     />
-                                    <CardContent sx={{ minHeight: '400px' }}>
+                                    <CardContent>
                                         <Typography variant="h6" gutterBottom>
                                             {lugar.nombre}
                                         </Typography>

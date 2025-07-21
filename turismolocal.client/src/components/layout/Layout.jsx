@@ -1,19 +1,18 @@
 // src/components/layout/Layout.jsx
 import React from 'react';
 import Navbar from './Navbar';
-import Footer from './Footer'; // si aún no tienes uno, puedes dejarlo comentado
+import Footer from './Footer';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, toggleTheme, modoOscuro }) => {
     return (
         <>
-            <Navbar />
-            <main style={{ padding: '1rem', minHeight: 'calc(100vh - 128px)' }}>
+            <Navbar toggleTheme={toggleTheme} modoOscuro={modoOscuro} />
+            <main style={{ padding: '1rem', minHeight: 'calc(100vh - 128px)', fontFamily: 'inherit' }}>
                 {children}
             </main>
-            {/* <Footer /> */}
+            <Footer />
         </>
     );
 };
 
 export default Layout;
-
