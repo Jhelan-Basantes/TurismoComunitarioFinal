@@ -1,4 +1,15 @@
-import React, { useState, useContext} from 'react';
+// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño 
+// Versión: TurismoLocal v9.  
+// Fecha: 22/07/2025
+// 
+// Descripción general del componente:
+// El componente `Pagos` permite al usuario confirmar y registrar el pago asociado a una reserva turística.
+// Muestra la información de los participantes, permite seleccionar el método de pago e ingresar el monto correspondiente.
+// Valida que el monto ingresado coincida con el valor total de la reserva, y luego realiza una petición POST para
+// registrar tanto la reserva como su pago en el backend. Si todo es exitoso, se muestra una animación de confetti
+// y un mensaje de confirmación.
+
+import React, { useState, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
@@ -31,17 +42,18 @@ import { CircularProgress } from '@mui/material';
 import confetti from 'canvas-confetti';
 
 function Pagos() {
-    const { usuario } = useContext(AuthContext);
-    const location = useLocation();
-    const reserva = location.state;
+    const { usuario } = useContext(AuthContext); // Se obtiene el usuario autenticado del contexto
+    const location = useLocation(); // Hook para acceder a la navegación
+    const reserva = location.state; // Se accede a los datos de la reserva pasados por navegación
 
+    // Estados locales para controlar el formulario
     const [montoIngresado, setMontoIngresado] = useState('');
     const [metodoPago, setMetodoPago] = useState('Efectivo');
     const [isProcessing, setIsProcessing] = useState(false);
     const [pagoExitoso, setPagoExitoso] = useState(false);
     const [mensajeFinal, setMensajeFinal] = useState('');
 
-
+    // Validación: Si no se recibe información de la reserva, se muestra un mensaje de error
     if (!reserva) {
         return (
             <Container sx={{ mt: 4 }}>
@@ -50,6 +62,7 @@ function Pagos() {
         );
     }
 
+    // Animación visual que se ejecuta cuando el pago se realiza exitosamente
     const lanzarConfetti = () => {
         confetti({
             particleCount: 200,
@@ -58,9 +71,11 @@ function Pagos() {
         });
     };
 
+    // Función principal que realiza la validación del pago y envía las peticiones al backend
     const handlePago = async () => {
         const montoFloat = parseFloat(montoIngresado);
 
+        // Validación estricta del monto
         if (
             !montoIngresado ||
             isNaN(montoFloat) ||
@@ -71,6 +86,7 @@ function Pagos() {
             return;
         }
 
+        // Construcción del payload de la reserva
         const reservaPayload = {
             usuarioId: reserva.usuarioId,
             lugarId: reserva.lugarId,
@@ -82,6 +98,7 @@ function Pagos() {
         };
 
         try {
+            // Registro de la reserva en el backend
             const resReserva = await fetch('https://localhost:7224/api/reservas', {
                 method: 'POST',
                 headers: {
@@ -98,6 +115,7 @@ function Pagos() {
 
             const reservaCreada = await resReserva.json();
 
+            // Construcción del payload para el registro del pago
             const pagoPayload = {
                 reservaId: reservaCreada.id,
                 monto: montoFloat,
@@ -105,6 +123,7 @@ function Pagos() {
                 estadoPago: 'Completado'
             };
 
+            // Registro del pago en el backend
             const resPago = await fetch('https://localhost:7224/api/pagos', {
                 method: 'POST',
                 headers: {
@@ -119,6 +138,7 @@ function Pagos() {
                 throw new Error(data.mensaje || 'Error al registrar el pago.');
             }
 
+            // Confirmación exitosa del proceso
             setPagoExitoso(true);
             lanzarConfetti();
             setMensajeFinal('¡Pago registrado y reserva confirmada con éxito!');
@@ -129,6 +149,7 @@ function Pagos() {
         }
     };
 
+    // Renderizado del formulario de pago y confirmación
     return (
         <Container maxWidth="sm" sx={{ mt: 5 }}>
             <Paper elevation={3} sx={{ p: 4 }}>
@@ -146,17 +167,14 @@ function Pagos() {
                     Personas que asistirán:
                 </Typography>
 
+                {/* Lista de personas registradas en la reserva */}
                 <List dense sx={{ mb: 3 }}>
                     {reserva.personas.map((p, i) => (
                         <React.Fragment key={i}>
                             <ListItem>
                                 <ListItemText
                                     primary={`${p.nombre} ${p.apellido} - Edad: ${p.edad}`}
-                                    secondary={
-                                        p.discapacidad
-                                            ? `Discapacidad: ${p.descripcionDiscapacidad || 'N/A'}`
-                                            : null
-                                    }
+                                    secondary={p.discapacidad ? `Discapacidad: ${p.descripcionDiscapacidad || 'N/A'}` : null}
                                 />
                             </ListItem>
                             <Divider />
@@ -164,6 +182,7 @@ function Pagos() {
                     ))}
                 </List>
 
+                {/* Selección del método de pago */}
                 <FormControl fullWidth sx={{ mb: 3 }}>
                     <InputLabel>Método de Pago</InputLabel>
                     <Select
@@ -178,6 +197,7 @@ function Pagos() {
                     </Select>
                 </FormControl>
 
+                {/* Campo para ingresar el monto a pagar */}
                 <TextField
                     fullWidth
                     type="number"
@@ -195,6 +215,7 @@ function Pagos() {
                     }}
                 />
 
+                {/* Botón de acción para confirmar el pago */}
                 <LoadingButton
                     variant="contained"
                     color={pagoExitoso ? "success" : "primary"}
@@ -224,6 +245,7 @@ function Pagos() {
                     {pagoExitoso ? 'Pago Confirmado' : 'Registrar Pago y Confirmar Reserva'}
                 </LoadingButton>
 
+                {/* Mensaje de estado final del proceso */}
                 {mensajeFinal && (
                     <Alert
                         severity={pagoExitoso ? 'success' : 'warning'}
@@ -238,4 +260,3 @@ function Pagos() {
 }
 
 export default Pagos;
- 

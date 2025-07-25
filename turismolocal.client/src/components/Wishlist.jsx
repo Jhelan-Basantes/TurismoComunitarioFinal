@@ -1,3 +1,15 @@
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ * 
+ * Descripción:
+ * Este componente muestra la "wishlist" o lista de lugares favoritos del usuario autenticado.
+ * Recupera los lugares desde la API, filtra aquellos que están guardados como favoritos
+ * (almacenados como un arreglo en la propiedad `wishlist` del usuario), y permite buscar,
+ * visualizar y quitar lugares de la lista. También muestra el promedio de calificaciones de cada lugar.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import {
     Box,
@@ -22,36 +34,40 @@ import { AuthContext } from '../context/AuthContext';
 
 function Wishlist() {
     const navigate = useNavigate();
-    const { usuario } = useContext(AuthContext);
+    const { usuario } = useContext(AuthContext); // Accede al usuario autenticado
     const usuarioId = usuario?.id;
     const esAdminOGuia = usuario?.role === 'Administrador' || usuario?.role === 'Guia';
 
+    // Estados para manejar la información y errores
     const [lugares, setLugares] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [calificaciones, setCalificaciones] = useState({});
     const [wishlist, setWishlist] = useState([]);
     const [error, setError] = useState('');
 
+    // useEffect para cargar datos desde la API
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Carga todos los lugares disponibles
                 const lugaresRes = await fetch('https://localhost:7224/api/lugares');
                 if (!lugaresRes.ok) throw new Error('Error al cargar lugares');
                 const lugaresData = await lugaresRes.json();
                 setLugares(lugaresData);
 
+                // Carga promedios de calificaciones por lugar
                 const calificacionesRes = await fetch('https://localhost:7224/api/opiniones/promedios');
                 if (!calificacionesRes.ok) throw new Error('Error al cargar calificaciones');
                 const calificacionesData = await calificacionesRes.json();
                 setCalificaciones(calificacionesData);
 
+                // Carga el array de lugares favoritos del usuario
                 if (usuarioId) {
                     const usuarioRes = await fetch(`https://localhost:7224/api/usuarios/${usuarioId}`, {
                         headers: { Authorization: `Bearer ${usuario.token}` }
                     });
                     if (!usuarioRes.ok) throw new Error('Error al cargar wishlist');
                     const usuarioData = await usuarioRes.json();
-
                     const parsed = JSON.parse(usuarioData.wishlist || '[]');
                     setWishlist(Array.isArray(parsed) ? parsed : []);
                 }
@@ -64,8 +80,10 @@ function Wishlist() {
         fetchData();
     }, [usuarioId, usuario]);
 
+    // Redirige al detalle de un lugar
     const verDetalle = (id) => navigate(`/lugar/${id}`);
 
+    // Agrega o remueve un lugar de la wishlist del usuario
     const handleWishlist = async (lugarId) => {
         if (!usuario) return alert('Debes iniciar sesión');
 
@@ -93,10 +111,12 @@ function Wishlist() {
         }
     };
 
+    // Placeholder para función de eliminación por admins/guías
     const eliminarLugar = (id) => {
         alert(`Eliminar lugar con ID ${id} (funcionalidad no implementada aquí)`);
     };
 
+    // Aplica filtros de búsqueda dentro de la wishlist del usuario
     const lugaresFiltrados = lugares.filter(lugar =>
         wishlist.includes(lugar.id) &&
         (lugar.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -109,6 +129,7 @@ function Wishlist() {
                 Mis Lugares Favoritos
             </Typography>
 
+            {/* Barra de búsqueda */}
             <Box
                 sx={{
                     mb: 4,
@@ -132,12 +153,14 @@ function Wishlist() {
                 />
             </Box>
 
+            {/* Mensaje de error si falla la carga */}
             {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
                     {error}
                 </Alert>
             )}
 
+            {/* Mensaje si no hay resultados en favoritos */}
             {lugaresFiltrados.length === 0 ? (
                 <Alert severity="info">No hay lugares favoritos que coincidan con "{busqueda}"</Alert>
             ) : (
@@ -157,6 +180,7 @@ function Wishlist() {
                                         flexDirection: 'column',
                                     }}
                                 >
+                                    {/* Botón para agregar o quitar de favoritos */}
                                     <IconButton
                                         onClick={() => handleWishlist(lugar.id)}
                                         sx={{
@@ -172,6 +196,7 @@ function Wishlist() {
                                             : <FavoriteBorderIcon color="action" />}
                                     </IconButton>
 
+                                    {/* Imagen del lugar */}
                                     {lugar.imagenUrl && (
                                         <CardMedia
                                             component="img"
@@ -182,9 +207,11 @@ function Wishlist() {
                                         />
                                     )}
 
+                                    {/* Contenido del lugar */}
                                     <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
                                         <Typography variant="h6">{lugar.nombre}</Typography>
 
+                                        {/* Descripción truncada con gradiente */}
                                         <Box sx={{ position: 'relative', height: 60, overflow: 'hidden' }}>
                                             <Typography
                                                 variant="body2"
@@ -212,6 +239,7 @@ function Wishlist() {
                                             />
                                         </Box>
 
+                                        {/* Precio y calificación */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
                                             <Typography variant="body2">${lugar.precio}</Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -222,6 +250,7 @@ function Wishlist() {
                                             </Box>
                                         </Box>
 
+                                        {/* Botones de acción */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
                                             <Button
                                                 size="small"

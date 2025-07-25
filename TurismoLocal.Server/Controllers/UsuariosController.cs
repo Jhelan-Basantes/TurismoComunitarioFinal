@@ -1,3 +1,12 @@
+// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño  
+// Versión: TurismoLocal v9  
+// Fecha: 22/07/2025
+
+// Descripción general:
+// Este controlador maneja las operaciones CRUD para los usuarios del sistema.
+// Incluye autenticación y autorización mediante JWT, acceso al perfil autenticado, 
+// y una funcionalidad específica para actualizar la lista de deseos (wishlist).
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,18 +27,25 @@ public class UsuariosController : ControllerBase
         _context = context;
     }
 
+    // GET: api/usuarios
+    // Obtiene todos los usuarios registrados
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
     {
         return await _context.Usuarios.ToListAsync();
     }
 
+    // GET: api/usuarios/{id}
+    // Obtiene un usuario específico por ID
     [HttpGet("{id}")]
     public async Task<ActionResult<Usuario>> GetUsuario(int id)
     {
         var usuario = await _context.Usuarios.FindAsync(id);
         return usuario == null ? NotFound() : Ok(usuario);
     }
+
+    // GET: api/usuarios/perfil
+    // Obtiene el perfil del usuario autenticado (según su token JWT)
     [HttpGet("perfil")]
     [Authorize]
     public async Task<IActionResult> ObtenerPerfil()
@@ -38,7 +54,8 @@ public class UsuariosController : ControllerBase
 
         var usuario = await _context.Usuarios
             .Where(u => u.Id.ToString() == userId)
-            .Select(u => new {
+            .Select(u => new
+            {
                 u.Id,
                 u.Username,
                 u.Email,
@@ -47,13 +64,11 @@ public class UsuariosController : ControllerBase
             })
             .FirstOrDefaultAsync();
 
-        if (usuario == null)
-            return NotFound();
-
-        return Ok(usuario);
+        return usuario == null ? NotFound() : Ok(usuario);
     }
 
-
+    // POST: api/usuarios
+    // Registra un nuevo usuario
     [HttpPost]
     public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
     {
@@ -62,10 +77,13 @@ public class UsuariosController : ControllerBase
         return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
     }
 
+    // PUT: api/usuarios/{id}
+    // Actualiza los datos de un usuario específico
     [HttpPut("{id}")]
     public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
     {
         if (id != usuario.Id) return BadRequest();
+
         _context.Entry(usuario).State = EntityState.Modified;
 
         try
@@ -81,7 +99,8 @@ public class UsuariosController : ControllerBase
         return NoContent();
     }
 
-    //Método Wishlist PUT + DTO 
+    // PUT: api/usuarios/{id}/wishlist
+    // Actualiza el campo Wishlist de un usuario autenticado
     [HttpPut("{id}/wishlist")]
     [Authorize]
     public async Task<IActionResult> ActualizarWishlist(int id, [FromBody] WishlistDto dto)
@@ -94,14 +113,14 @@ public class UsuariosController : ControllerBase
         return NoContent();
     }
 
+    // DTO utilizado para la actualización de wishlist
     public class WishlistDto
     {
         public string Wishlist { get; set; } = string.Empty;
     }
 
-    //último update: 19:47
-
-
+    // DELETE: api/usuarios/{id}
+    // Elimina un usuario específico
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUsuario(int id)
     {

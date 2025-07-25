@@ -1,3 +1,14 @@
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  Fecha: 22/07/2025
+ *
+ * Descripción general:
+ * Este componente permite a un usuario autenticado realizar una reserva para un lugar turístico.
+ * Incluye selección del lugar, fechas de inicio y fin, número de personas, información individual por asistente,
+ * verificación de conflictos de horario y control del número máximo recomendado.
+ * Calcula el total a pagar y redirige al componente de pago con la información recolectada.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,6 +22,7 @@ function Reservas() {
     const { usuario } = useContext(AuthContext);
     const navigate = useNavigate();
 
+    // Estados principales del componente
     const [lugares, setLugares] = useState([]);
     const [lugarId, setLugarId] = useState('');
     const [cantidadPersonas, setCantidadPersonas] = useState(1);
@@ -21,6 +33,7 @@ function Reservas() {
     const [reservasExistentes, setReservasExistentes] = useState([]);
     const [llevaMascotas, setLlevaMascotas] = useState(false);
 
+    // Carga inicial de lugares desde la API
     useEffect(() => {
         fetch('https://localhost:7224/api/lugares')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar lugares'))
@@ -28,6 +41,7 @@ function Reservas() {
             .catch(console.error);
     }, []);
 
+    // Obtiene reservas existentes del lugar seleccionado
     useEffect(() => {
         if (lugarId) {
             fetch(`https://localhost:7224/api/reservas/lugar/${lugarId}`)
@@ -39,6 +53,7 @@ function Reservas() {
         }
     }, [lugarId]);
 
+    // Extrae el máximo de personas recomendado de un lugar
     const obtenerMaximoPersonas = (id) => {
         const lugar = lugares.find(l => l.id === parseInt(id));
         if (lugar?.personasRecomendadas) {
@@ -48,6 +63,7 @@ function Reservas() {
         return null;
     };
 
+    // Verifica si el nuevo horario de reserva se superpone con alguna existente
     const hayConflictoReserva = (inicio, fin) => {
         const nuevaInicio = new Date(inicio);
         const nuevaFin = new Date(fin);
@@ -58,6 +74,7 @@ function Reservas() {
         });
     };
 
+    // Calcula el número de días entre dos fechas
     const calcularDiasEntre = (inicio, fin) => {
         const ini = new Date(inicio);
         const fi = new Date(fin);
@@ -65,6 +82,7 @@ function Reservas() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    // Determina la categoría de edad de una persona
     const clasificarEdad = (edad) => {
         const e = Number(edad);
         if (isNaN(e) || e < 0) return '';
@@ -74,6 +92,7 @@ function Reservas() {
         return 'Adulto Mayor';
     };
 
+    // Al cambiar el lugar, valida límite de personas
     const handleLugarChange = (e) => {
         const nuevoId = e.target.value;
         setLugarId(nuevoId);
@@ -81,6 +100,7 @@ function Reservas() {
         setExcesoPersonas(max && cantidadPersonas > max);
     };
 
+    // Al cambiar la cantidad de personas, actualiza estructura de datos
     const handleCantidadPersonasChange = (e) => {
         const cantidad = parseInt(e.target.value);
         setCantidadPersonas(cantidad);
@@ -92,6 +112,7 @@ function Reservas() {
         setPersonas(nuevasPersonas);
     };
 
+    // Actualiza información de una persona individual del array
     const handlePersonaChange = (index, campo, valor) => {
         const nuevasPersonas = [...personas];
         nuevasPersonas[index][campo] = valor;
@@ -105,6 +126,10 @@ function Reservas() {
         setLlevaMascotas(e.target.checked);
     };
 
+    /**
+     * handleSubmit: valida todos los campos de reserva,
+     * calcula el costo total y redirige al componente de pago.
+     */
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!usuario?.id) return alert('Debe iniciar sesión para hacer una reserva.');
@@ -141,6 +166,7 @@ function Reservas() {
         navigate('/pagos', { state: reserva });
     };
 
+    // Cálculo dinámico de total para mostrar resumen
     const lugarSeleccionado = lugares.find(l => l.id === parseInt(lugarId));
     const dias = fechaInicio && fechaFin ? calcularDiasEntre(fechaInicio, fechaFin) : 1;
     const total = lugarSeleccionado ? lugarSeleccionado.precio * cantidadPersonas * dias : 0;
@@ -151,7 +177,7 @@ function Reservas() {
                 <Typography variant="h4" gutterBottom>Reservar Lugar</Typography>
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={4}>
-                        {/* Panel izquierdo: formulario de reserva */}
+                        {/* Panel izquierdo: Formulario de reserva */}
                         <Grid item xs={12} md={6}>
                             <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <FormControl fullWidth>
@@ -213,7 +239,7 @@ function Reservas() {
                             </Box>
                         </Grid>
 
-                        {/* Panel derecho: imagen + resumen */}
+                        {/* Panel derecho: Imagen y resumen */}
                         <Grid item xs={12} md={6}>
                             <Card>
                                 {lugarSeleccionado?.imagenUrl && (
@@ -237,7 +263,7 @@ function Reservas() {
                             </Card>
                         </Grid>
 
-                        {/* Formulario de personas debajo */}
+                        {/* Panel inferior: Datos de las personas */}
                         <Grid item xs={12}>
                             <Box sx={{ mt: 4 }}>
                                 <Typography variant="h6" gutterBottom>Información de las Personas</Typography>

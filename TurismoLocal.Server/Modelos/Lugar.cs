@@ -1,16 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
+// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño  
+// Versión: TurismoLocal v9  
+// Fecha: 22/07/2025
 
-namespace TurismoLocal.Server.Modelos;
+// Descripción:
+// Modelo de datos que representa un lugar turístico disponible en la plataforma.
 
-public class Lugar
+namespace TurismoLocal.Server.Modelos
 {
-    public int Id { get; set; }
-    public string Nombre { get; set; } = null!;
-    public string Descripcion { get; set; } = null!;
-    public decimal Precio { get; set; }
-    public string Ubicacion { get; set; } = null!;
-    public string? Categoria { get; set; }
-    public int IdGuia { get; set; }
+    public class Lugar
+    {
+        public int Id { get; set; } // Clave primaria
 
-    public string? ImagenUrl { get; set; }  
+        public string Nombre { get; set; } = null!; // Nombre del lugar
+        public string Descripcion { get; set; } = null!; // Descripción detallada
+        public decimal Precio { get; set; } // Costo del servicio o entrada
+        public string Ubicacion { get; set; } = null!; // Dirección o zona geográfica
+
+        public string? Categoria { get; set; } // Ejemplo: "Aventura", "Cultural", etc.
+        public int IdGuia { get; set; } // ID del guía asociado (clave foránea)
+        public string? ImagenUrl { get; set; } // URL de la imagen principal del lugar
+    }
 }

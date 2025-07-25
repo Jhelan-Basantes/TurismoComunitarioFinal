@@ -1,3 +1,12 @@
+// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño  
+// Versión: TurismoLocal v9  
+// Fecha: 22/07/2025
+
+// Descripción general:
+// Este controlador gestiona las operaciones CRUD relacionadas con las opiniones de los usuarios sobre los lugares turísticos.
+// Incluye funcionalidades para registrar, consultar, actualizar y eliminar opiniones, así como calcular promedios de calificaciones.
+// Utiliza Entity Framework Core y sigue una arquitectura RESTful.
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TurismoLocal.Server.Data;
@@ -16,12 +25,16 @@ public class OpinionesController : ControllerBase
         _context = context;
     }
 
+    // GET: api/opiniones
+    // Retorna la lista completa de opiniones registradas
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Opinion>>> GetOpiniones()
     {
         return await _context.Opiniones.ToListAsync();
     }
 
+    // GET: api/opiniones/{id}
+    // Obtiene una opinión específica según su ID
     [HttpGet("{id}")]
     public async Task<ActionResult<Opinion>> GetOpinion(int id)
     {
@@ -29,19 +42,28 @@ public class OpinionesController : ControllerBase
         return opinion == null ? NotFound() : Ok(opinion);
     }
 
-    //Método promedios de calificaciones
+    // GET: api/opiniones/promedios
+    // Retorna el promedio de calificaciones agrupado por ID de lugar
     [HttpGet("promedios")]
     public async Task<ActionResult<Dictionary<int, double>>> GetPromedioPorLugar()
     {
         var promedios = await _context.Opiniones
             .GroupBy(o => o.LugarId)
-            .Select(g => new { LugarId = g.Key, Promedio = g.Average(o => o.Calificacion) })
-            .ToDictionaryAsync(g => g.LugarId, g => Math.Round(g.Promedio, 1));
+            .Select(g => new
+            {
+                LugarId = g.Key,
+                Promedio = g.Average(o => o.Calificacion)
+            })
+            .ToDictionaryAsync(
+                g => g.LugarId,
+                g => Math.Round(g.Promedio, 1)
+            );
 
         return Ok(promedios);
     }
-    //Last update: 20:00
 
+    // POST: api/opiniones
+    // Registra una nueva opinión
     [HttpPost]
     public async Task<ActionResult<Opinion>> PostOpinion(Opinion opinion)
     {
@@ -50,22 +72,30 @@ public class OpinionesController : ControllerBase
         return CreatedAtAction(nameof(GetOpinion), new { id = opinion.Id }, opinion);
     }
 
+    // PUT: api/opiniones/{id}
+    // Actualiza una opinión existente
     [HttpPut("{id}")]
     public async Task<IActionResult> PutOpinion(int id, Opinion opinion)
     {
         if (id != opinion.Id) return BadRequest();
 
         _context.Entry(opinion).State = EntityState.Modified;
-        try { await _context.SaveChangesAsync(); }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
         catch (DbUpdateConcurrencyException)
         {
             if (!_context.Opiniones.Any(e => e.Id == id)) return NotFound();
             throw;
         }
 
-        return NoContent();
+        return NoContent(); // 204
     }
 
+    // DELETE: api/opiniones/{id}
+    // Elimina una opinión existente
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOpinion(int id)
     {
@@ -74,6 +104,7 @@ public class OpinionesController : ControllerBase
 
         _context.Opiniones.Remove(opinion);
         await _context.SaveChangesAsync();
+
         return NoContent();
     }
 }

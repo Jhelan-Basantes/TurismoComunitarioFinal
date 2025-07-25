@@ -1,12 +1,24 @@
-/* index.css */
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ * 
+ * Descripción general:
+ * Este archivo define los estilos base globales para toda la aplicación "Turismo Comunitario".
+ * Establece reglas generales de normalización como el modelo de caja, márgenes y paddings,
+ * y configura la tipografía principal del sitio, así como colores de fondo y texto predeterminados.
+ */
+
+/* Normalización del modelo de caja y eliminación de espacios por defecto en todos los elementos */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+/* Estilos generales para el documento HTML y el cuerpo de la página */
 html, body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
+    font-family: 'Poppins', sans-serif; /* Tipografía base utilizada en toda la aplicación */
+    background-color: #f9f9f9; /* Color de fondo claro por defecto */
+    color: #333; /* Color de texto principal (gris oscuro) */
 }

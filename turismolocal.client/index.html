@@ -1,18 +1,39 @@
+<!--
+    Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+    Versión: TurismoLocal v9.
+    Fecha: 22/07/2025
+
+    Descripción general:
+    Este archivo HTML es el punto de entrada principal de la aplicación "Turismo Comunitario".
+    Define la estructura base del documento, carga fuentes y estilos globales, e integra tanto
+    la aplicación React como el chatbot inteligente de Elfsight para asistencia al usuario.
+-->
+
 <!doctype html>
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+
+    <!-- Ícono de pestaña (favicon) generado por Vite -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <!-- Fuente principal utilizada en toda la aplicación -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Configuración responsive para dispositivos móviles -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Vite + React</title>
 </head>
 <body>
+    <!-- Punto de montaje principal de la aplicación React -->
     <div id="root"></div>
+
+    <!-- Carga del archivo JavaScript principal (generado por Vite) -->
     <script type="module" src="/src/main.jsx"></script>
 
-    <!-- Elfsight AI Chatbot | Turismo Local -->
+    <!-- Integración del chatbot AI de Elfsight para soporte en línea -->
     <script src="https://static.elfsight.com/platform/platform.js" async></script>
-    <div class="elfsight-app-8265c177-ac18-427a-91cf-fa61c2f39642" data-elfsight-app-lazy></div>
+    <div class="elfsight-app-11c118f0-82d7-45da-b394-da2bc7b4ed70" data-elfsight-app-lazy></div>
 </body>
 </html>

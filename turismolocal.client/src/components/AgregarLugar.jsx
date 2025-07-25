@@ -1,3 +1,16 @@
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ * 
+ * Descripción general:
+ * Este componente permite a los guías agregar o editar lugares turísticos en la plataforma.
+ * Integra un formulario dinámico que se rellena automáticamente al seleccionar un lugar ya existente,
+ * permitiendo su edición, o bien permite crear un nuevo lugar desde cero.
+ * Usa la API REST para enviar solicitudes POST (crear) o PUT (actualizar) según el contexto.
+ * Se apoya en Material UI para el diseño visual y en Framer Motion para animación de entrada.
+ */
+
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/layout/Layout';
 import {
@@ -16,13 +29,20 @@ import {
 } from '@mui/material';
 import { Save, AddLocationAlt, EditLocationAlt } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-void motion;
+void motion; // Evita advertencia por importación sin uso directo
 
+/**
+ * Componente AgregarEditarLugar
+ * 
+ * Proporciona un formulario controlado para crear o modificar lugares turísticos.
+ * Se comunica con la API `api/lugares` y soporta selección de lugares existentes.
+ */
 function AgregarEditarLugar() {
     const [lugares, setLugares] = useState([]);
     const [modoEdicion, setModoEdicion] = useState(false);
     const [lugarSeleccionado, setLugarSeleccionado] = useState(null);
 
+    // Campos del formulario
     const [nombre, setNombre] = useState("");
     const [descripcion, setDescripcion] = useState("");
     const [precio, setPrecio] = useState("");
@@ -31,6 +51,7 @@ function AgregarEditarLugar() {
     const [idGuia, setIdGuia] = useState("");
     const [imagenUrl, setImagenUrl] = useState("");
 
+    // Carga inicial de lugares desde la API
     useEffect(() => {
         fetch("https://localhost:7224/api/lugares")
             .then(res => res.json())
@@ -38,6 +59,10 @@ function AgregarEditarLugar() {
             .catch(err => console.error(err));
     }, []);
 
+    /**
+     * Maneja la selección de un lugar desde el menú desplegable.
+     * Si existe, carga sus datos para edición. Si no, limpia el formulario.
+     */
     const manejarSeleccion = (id) => {
         const lugar = lugares.find(l => l.id === parseInt(id));
         if (lugar) {
@@ -57,6 +82,7 @@ function AgregarEditarLugar() {
         }
     };
 
+    // Limpia los campos del formulario
     const limpiarFormulario = () => {
         setNombre("");
         setDescripcion("");
@@ -67,6 +93,9 @@ function AgregarEditarLugar() {
         setImagenUrl("");
     };
 
+    /**
+     * Maneja el envío del formulario, realizando una petición POST o PUT según el modo.
+     */
     const manejarSubmit = async (e) => {
         e.preventDefault();
         const lugarData = {
@@ -104,6 +133,7 @@ function AgregarEditarLugar() {
 
     return (
         <Layout>
+            {/* Animación de entrada con Framer Motion */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -115,6 +145,7 @@ function AgregarEditarLugar() {
                         {modoEdicion ? "Editar Lugar" : "Agregar Lugar"}
                     </Typography>
 
+                    {/* Selector de lugar existente para editar */}
                     <FormControl fullWidth sx={{ mb: 3 }}>
                         <InputLabel>Seleccionar Lugar</InputLabel>
                         <Select
@@ -131,6 +162,7 @@ function AgregarEditarLugar() {
                         </Select>
                     </FormControl>
 
+                    {/* Formulario de ingreso y edición */}
                     <form onSubmit={manejarSubmit}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
@@ -192,6 +224,8 @@ function AgregarEditarLugar() {
                                     onChange={e => setImagenUrl(e.target.value)}
                                 />
                             </Grid>
+
+                            {/* Previsualización de imagen, si se proporciona una URL */}
                             {imagenUrl && (
                                 <Grid item xs={12}>
                                     <Card>
@@ -207,6 +241,8 @@ function AgregarEditarLugar() {
                                     </Card>
                                 </Grid>
                             )}
+
+                            {/* Botón para guardar o actualizar */}
                             <Grid item xs={12}>
                                 <Button
                                     fullWidth

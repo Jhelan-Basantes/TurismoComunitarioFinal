@@ -1,15 +1,20 @@
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ * 
+ * Descripción general:
+ * Este componente renderiza el catálogo de lugares turísticos disponibles. 
+ * Permite a los usuarios visualizar, buscar y marcar lugares como favoritos. 
+ * Los administradores y guías pueden también eliminar lugares (funcionalidad pendiente). 
+ * Se conecta con la API para obtener los lugares, las calificaciones promedio y 
+ * la wishlist personalizada del usuario autenticado.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    CardMedia,
-    Typography,
-    InputBase,
-    IconButton,
-    Alert,
-    Button
+    Box, Grid, Card, CardContent, CardMedia, Typography,
+    InputBase, IconButton, Alert, Button
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -26,11 +31,24 @@ function Catalogo() {
     const usuarioId = usuario?.id;
     const esAdminOGuia = usuario?.role === 'Administrador' || usuario?.role === 'Guia';
 
+    // Estado para almacenar los lugares turísticos
     const [lugares, setLugares] = useState([]);
+
+    // Estado para controlar la búsqueda en tiempo real
     const [busqueda, setBusqueda] = useState('');
+
+    // Diccionario con las calificaciones promedio de cada lugar
     const [calificaciones, setCalificaciones] = useState({});
+
+    // Lista de IDs de lugares marcados como favoritos
     const [wishlist, setWishlist] = useState([]);
 
+    /**
+     * useEffect que realiza múltiples solicitudes:
+     * - Carga la lista completa de lugares desde la API
+     * - Carga las calificaciones promedio de cada lugar
+     * - Si hay usuario autenticado, recupera su wishlist
+     */
     useEffect(() => {
         fetch('https://localhost:7224/api/lugares')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar lugares'))
@@ -57,8 +75,13 @@ function Catalogo() {
         }
     }, [usuarioId, usuario]);
 
+    // Navega al detalle del lugar seleccionado
     const verDetalle = (id) => navigate(`/lugar/${id}`);
 
+    /**
+     * Permite al usuario agregar o quitar un lugar de su wishlist.
+     * Actualiza tanto el estado local como la base de datos mediante una solicitud PUT.
+     */
     const handleWishlist = async (lugarId) => {
         if (!usuario) return alert('Debes iniciar sesión');
 
@@ -86,12 +109,15 @@ function Catalogo() {
         }
     };
 
-
+    /**
+     * Placeholder de eliminación (función aún no implementada).
+     * Solo visible para administradores o guías.
+     */
     const eliminarLugar = (id) => {
-        // Aquí puedes implementar la lógica para eliminar un lugar si eres administrador o guía
         alert(`Eliminar lugar con ID ${id} (funcionalidad no implementada aquí)`);
     };
 
+    // Filtrado de lugares según coincidencia con nombre o descripción
     const lugaresFiltrados = lugares.filter(lugar =>
         lugar.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
         lugar.descripcion.toLowerCase().includes(busqueda.toLowerCase())
@@ -103,6 +129,7 @@ function Catalogo() {
                 Catálogo de Lugares
             </Typography>
 
+            {/* Barra de búsqueda */}
             <Box
                 sx={{
                     mb: 4,
@@ -126,6 +153,7 @@ function Catalogo() {
                 />
             </Box>
 
+            {/* Alerta si no se encuentran resultados */}
             {lugaresFiltrados.length === 0 ? (
                 <Alert severity="info">No se encontraron resultados para "{busqueda}"</Alert>
             ) : (
@@ -145,6 +173,7 @@ function Catalogo() {
                                         flexDirection: 'column',
                                     }}
                                 >
+                                    {/* Botón para agregar/quitar de favoritos */}
                                     <IconButton
                                         onClick={() => handleWishlist(lugar.id)}
                                         sx={{
@@ -160,6 +189,7 @@ function Catalogo() {
                                             : <FavoriteBorderIcon color="action" />}
                                     </IconButton>
 
+                                    {/* Imagen del lugar */}
                                     {lugar.imagenUrl && (
                                         <CardMedia
                                             component="img"
@@ -173,6 +203,7 @@ function Catalogo() {
                                     <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
                                         <Typography variant="h6">{lugar.nombre}</Typography>
 
+                                        {/* Descripción truncada con efecto fade */}
                                         <Box sx={{ position: 'relative', height: 60, overflow: 'hidden' }}>
                                             <Typography
                                                 variant="body2"
@@ -187,7 +218,6 @@ function Catalogo() {
                                             >
                                                 {lugar.descripcion}
                                             </Typography>
-
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
@@ -200,6 +230,7 @@ function Catalogo() {
                                             />
                                         </Box>
 
+                                        {/* Precio y calificación */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
                                             <Typography variant="body2">${lugar.precio}</Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -210,6 +241,7 @@ function Catalogo() {
                                             </Box>
                                         </Box>
 
+                                        {/* Acciones: Ver más / Eliminar */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
                                             <Button
                                                 size="small"
