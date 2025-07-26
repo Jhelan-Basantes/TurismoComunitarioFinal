@@ -1,13 +1,25 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  
+ * Versión: TurismoLocal v9.
  * Fecha: 22/07/2025
  * 
  * Descripción general:
- * Este archivo define el contexto de autenticación de la aplicación "Turismo Comunitario".
- * Utiliza React Context API para almacenar y gestionar el estado de sesión del usuario.
- * Permite iniciar y cerrar sesión, y mantiene el estado persistente mediante localStorage.
+ * Este archivo define el contexto de autenticación para la aplicación "Turismo Comunitario".
+ * Utiliza React Context API para gestionar el estado global de sesión del usuario,
+ * permitiendo el inicio y cierre de sesión de forma centralizada.
+ * 
+ * Funcionalidades:
+ * - Mantiene el estado del usuario autenticado en memoria y lo sincroniza con localStorage
+ *   para persistencia entre recargas de página.
+ * - Provee funciones `login` y `logout` para actualizar el estado y persistir los datos.
+ * - Permite que cualquier componente consumidora acceda fácilmente a la información
+ *   y acciones relacionadas con la autenticación mediante el contexto `AuthContext`.
+ * 
+ * Uso:
+ * Envolver la aplicación con el componente `AuthProvider` para habilitar acceso al
+ * contexto de autenticación en toda la aplicación.
  */
+
 
 import React, { createContext, useState, useEffect } from 'react';
 

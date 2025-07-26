@@ -4,11 +4,18 @@
  * Fecha: 22/07/2025
  * 
  * Descripción general:
- * Este archivo es el punto de entrada principal de la aplicación React "Turismo Comunitario".
- * Aquí se monta el componente raíz <App /> dentro del contenedor HTML con el ID 'root',
- * utilizando el modo estricto de React para detectar posibles problemas durante el desarrollo.
- * Además, se cargan las variantes de la fuente tipográfica 'Poppins' para mantener coherencia visual.
+ * Archivo principal de entrada para la aplicación React "Turismo Comunitario".
+ * 
+ * Funcionalidad:
+ * - Monta el componente raíz <App /> dentro del elemento HTML con id 'root'.
+ * - Utiliza React.StrictMode para ayudar a identificar problemas potenciales en el desarrollo.
+ * - Importa y carga la familia tipográfica 'Poppins' en sus variantes 300, 400 y 600 para mantener
+ *   la coherencia visual y estética en toda la aplicación.
+ * 
+ * Notas:
+ * ReactDOM.createRoot es la API recomendada en React 18 para la creación de la raíz de la aplicación.
  */
+
 
 // Importaciones principales de React
 import React from 'react';

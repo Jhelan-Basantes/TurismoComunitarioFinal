@@ -1,15 +1,26 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  
+ * Versión: TurismoLocal v9.
  * Fecha: 22/07/2025
  * 
  * Descripción general:
- * Este componente permite a los guías agregar o editar lugares turísticos en la plataforma.
- * Integra un formulario dinámico que se rellena automáticamente al seleccionar un lugar ya existente,
- * permitiendo su edición, o bien permite crear un nuevo lugar desde cero.
- * Usa la API REST para enviar solicitudes POST (crear) o PUT (actualizar) según el contexto.
- * Se apoya en Material UI para el diseño visual y en Framer Motion para animación de entrada.
+ * Este componente permite a los usuarios con permisos agregar o editar lugares turísticos.
+ * A través de un formulario interactivo y validado, los administradores o guías pueden 
+ * registrar nuevos lugares o modificar la información existente (nombre, descripción, precio, 
+ * ubicación, categoría, guía asociado e imagen).
+ * 
+ * Funcionalidades principales:
+ * - Carga y muestra la lista de lugares existentes desde la API.
+ * - Permite seleccionar un lugar para editar sus datos o limpiar el formulario para agregar uno nuevo.
+ * - Valida y envía datos al backend para crear o actualizar lugares.
+ * - Muestra una previsualización de la imagen basada en la URL ingresada.
+ * - Utiliza animaciones suaves con Framer Motion para mejorar la experiencia del usuario.
+ * 
+ * Componentes utilizados:
+ * - Material UI para la interfaz visual (formulario, botones, tarjetas, etc.).
+ * - Layout para estructura común del sitio.
  */
+
 
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/layout/Layout';
@@ -29,17 +40,16 @@ import {
 } from '@mui/material';
 import { Save, AddLocationAlt, EditLocationAlt } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-void motion; // Evita advertencia por importación sin uso directo
 
-/**
- * Componente AgregarEditarLugar
- * 
- * Proporciona un formulario controlado para crear o modificar lugares turísticos.
- * Se comunica con la API `api/lugares` y soporta selección de lugares existentes.
- */
-function AgregarEditarLugar() {
+void motion;
+function AgregarLugar() {
+    // Estado para lista de lugares obtenidos desde la API
     const [lugares, setLugares] = useState([]);
+
+    // Estado que controla si estamos en modo edición
     const [modoEdicion, setModoEdicion] = useState(false);
+
+    // Lugar seleccionado para edición
     const [lugarSeleccionado, setLugarSeleccionado] = useState(null);
 
     // Campos del formulario
@@ -51,7 +61,7 @@ function AgregarEditarLugar() {
     const [idGuia, setIdGuia] = useState("");
     const [imagenUrl, setImagenUrl] = useState("");
 
-    // Carga inicial de lugares desde la API
+    // Cargar lista de lugares al cargar el componente
     useEffect(() => {
         fetch("https://localhost:7224/api/lugares")
             .then(res => res.json())
@@ -60,8 +70,8 @@ function AgregarEditarLugar() {
     }, []);
 
     /**
-     * Maneja la selección de un lugar desde el menú desplegable.
-     * Si existe, carga sus datos para edición. Si no, limpia el formulario.
+     * Maneja la selección de un lugar para edición desde el menú desplegable.
+     * Carga los datos en el formulario si se selecciona un lugar existente.
      */
     const manejarSeleccion = (id) => {
         const lugar = lugares.find(l => l.id === parseInt(id));
@@ -82,7 +92,9 @@ function AgregarEditarLugar() {
         }
     };
 
-    // Limpia los campos del formulario
+    /**
+     * Limpia los campos del formulario.
+     */
     const limpiarFormulario = () => {
         setNombre("");
         setDescripcion("");
@@ -94,10 +106,12 @@ function AgregarEditarLugar() {
     };
 
     /**
-     * Maneja el envío del formulario, realizando una petición POST o PUT según el modo.
+     * Envía los datos del formulario para agregar o actualizar un lugar.
+     * Realiza validaciones básicas y utiliza la API para persistir los datos.
      */
     const manejarSubmit = async (e) => {
         e.preventDefault();
+
         const lugarData = {
             nombre,
             descripcion,
@@ -133,20 +147,20 @@ function AgregarEditarLugar() {
 
     return (
         <Layout>
-            {/* Animación de entrada con Framer Motion */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <Box maxWidth={700} mx="auto" my={5} p={3}>
+                <Box maxWidth={900} mx="auto" my={5} p={3}>
+                    {/* Título dinámico */}
                     <Typography variant="h4" gutterBottom align="center">
                         {modoEdicion ? <EditLocationAlt fontSize="large" /> : <AddLocationAlt fontSize="large" />}
-                        {modoEdicion ? "Editar Lugar" : "Agregar Lugar"}
+                        {modoEdicion ? " Editar Lugar" : " Agregar Lugar"}
                     </Typography>
 
-                    {/* Selector de lugar existente para editar */}
-                    <FormControl fullWidth sx={{ mb: 3 }}>
+                    {/* Selector de lugar para edición */}
+                    <FormControl fullWidth sx={{ mb: 4 }}>
                         <InputLabel>Seleccionar Lugar</InputLabel>
                         <Select
                             value={lugarSeleccionado?.id || ""}
@@ -162,24 +176,30 @@ function AgregarEditarLugar() {
                         </Select>
                     </FormControl>
 
-                    {/* Formulario de ingreso y edición */}
+                    {/* Formulario de lugar */}
                     <form onSubmit={manejarSubmit}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} sm={6}>
                                 <TextField fullWidth label="Nombre" value={nombre} onChange={e => setNombre(e.target.value)} required />
                             </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <TextField fullWidth label="Ubicación" value={ubicacion} onChange={e => setUbicacion(e.target.value)} required />
+                            </Grid>
+
                             <Grid item xs={12}>
                                 <TextField
                                     fullWidth
                                     label="Descripción"
                                     multiline
-                                    rows={4}
+                                    minRows={4}
                                     value={descripcion}
                                     onChange={e => setDescripcion(e.target.value)}
                                     required
                                 />
                             </Grid>
-                            <Grid item xs={6}>
+
+                            <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
                                     label="Precio por Persona"
@@ -189,16 +209,8 @@ function AgregarEditarLugar() {
                                     required
                                 />
                             </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Ubicación"
-                                    value={ubicacion}
-                                    onChange={e => setUbicacion(e.target.value)}
-                                    required
-                                />
-                            </Grid>
-                            <Grid item xs={6}>
+
+                            <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
                                     label="Categoría"
@@ -206,7 +218,8 @@ function AgregarEditarLugar() {
                                     onChange={e => setCategoria(e.target.value)}
                                 />
                             </Grid>
-                            <Grid item xs={6}>
+
+                            <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
                                     label="ID del Guía"
@@ -216,16 +229,17 @@ function AgregarEditarLugar() {
                                     required
                                 />
                             </Grid>
-                            <Grid item xs={12}>
+
+                            <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
-                                    label="URL de la imagen"
+                                    label="URL de la Imagen"
                                     value={imagenUrl}
                                     onChange={e => setImagenUrl(e.target.value)}
                                 />
                             </Grid>
 
-                            {/* Previsualización de imagen, si se proporciona una URL */}
+                            {/* Previsualización de imagen */}
                             {imagenUrl && (
                                 <Grid item xs={12}>
                                     <Card>
@@ -236,13 +250,15 @@ function AgregarEditarLugar() {
                                             alt="Previsualización"
                                         />
                                         <CardContent>
-                                            <Typography variant="caption" align="center">Previsualización de la imagen</Typography>
+                                            <Typography variant="caption" align="center" display="block">
+                                                Previsualización de la imagen
+                                            </Typography>
                                         </CardContent>
                                     </Card>
                                 </Grid>
                             )}
 
-                            {/* Botón para guardar o actualizar */}
+                            {/* Botón de envío */}
                             <Grid item xs={12}>
                                 <Button
                                     fullWidth
@@ -262,4 +278,5 @@ function AgregarEditarLugar() {
     );
 }
 
-export default AgregarEditarLugar;
+// Exportación del componente
+export default AgregarLugar;

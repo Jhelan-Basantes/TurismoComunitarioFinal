@@ -1,14 +1,26 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  Fecha: 22/07/2025
+ * Versión: TurismoLocal v9.
+ * Fecha: 22/07/2025
  *
  * Descripción general:
- * Este componente gestiona el formulario de registro de nuevos usuarios
- * en la aplicación Turismo Comunitario. Incluye campos para nombre de usuario,
- * correo, teléfono, contraseña y rol. Realiza una solicitud POST al backend
- * para crear un nuevo usuario. Muestra alertas de error en caso de fallos
- * y redirige al usuario a la pantalla de login tras un registro exitoso.
+ * Componente que gestiona el formulario de registro de nuevos usuarios para la
+ * aplicación Turismo Comunitario. Permite ingresar datos como nombre de usuario,
+ * correo electrónico, teléfono, contraseña y selección del rol (Turista o Guía).
+ * 
+ * Funcionalidades:
+ * - Controla el estado de los campos del formulario con React useState.
+ * - Realiza validaciones básicas de longitud y formato en los campos.
+ * - Envía una solicitud POST al backend para crear un nuevo usuario.
+ * - Muestra alertas de error contextualizadas en caso de fallo en la solicitud.
+ * - Redirige automáticamente a la página de login tras un registro exitoso.
+ * - Utiliza Material UI para componentes y animaciones (alertas con Slide).
+ * 
+ * Consideraciones:
+ * - El teléfono es un campo opcional.
+ * - El rol por defecto al iniciar el formulario es "Turista".
  */
+
 
 import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';

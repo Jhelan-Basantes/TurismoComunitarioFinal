@@ -1,39 +1,64 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  Fecha: 22/07/2025
- *
- * Descripción general:
- * Este componente permite a un usuario autenticado realizar una reserva para un lugar turístico.
- * Incluye selección del lugar, fechas de inicio y fin, número de personas, información individual por asistente,
- * verificación de conflictos de horario y control del número máximo recomendado.
- * Calcula el total a pagar y redirige al componente de pago con la información recolectada.
+ * Versión: TurismoLocal v9.  Fecha: 25/7/2025
+ * 
+ * Descripción General:
+ * 
+ * Componente `Reservas.jsx` que permite a los usuarios realizar reservas para lugares turísticos.
+ * 
+ * Funcionalidades principales:
+ * - Carga y muestra la lista de lugares turísticos disponibles desde la API.
+ * - Permite seleccionar un lugar, fecha y hora de inicio y fin para la reserva.
+ * - Define y valida la cantidad de personas que asistirán, con controles para incrementar o decrementar.
+ * - Permite ingresar detalles de cada persona (nombre, apellido, edad, discapacidad, descripción de discapacidad).
+ * - Clasifica automáticamente la edad de cada persona en categorías (bebé, niño, adulto, adulto mayor).
+ * - Valida que las fechas sean válidas, no existan conflictos con reservas previas para el mismo lugar y que no se exceda el máximo recomendado de personas.
+ * - Permite indicar si se llevarán mascotas.
+ * - Calcula el total a pagar según el precio del lugar, cantidad de personas y duración de la reserva.
+ * - Al enviar el formulario, valida los datos y navega a la página de pagos pasando el objeto reserva.
+ * 
+ * Tecnologías y librerías usadas:
+ * - React con hooks (`useState`, `useEffect`, `useContext`).
+ * - React Router (`useNavigate`) para navegación programática.
+ * - Material UI para componentes de interfaz.
+ * - `@mui/x-date-pickers` con `dayjs` para selección y manejo de fechas y horas.
+ * - Contexto de autenticación para obtener información del usuario actual.
+ * 
+ * Este componente ofrece una interfaz intuitiva para la gestión completa de la reserva, incluyendo controles detallados
+ * para las personas que asistirán y validaciones que aseguran la integridad y factibilidad de la reserva.
  */
+
+
 
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Grid, Box, Typography, FormControl, InputLabel, Select, MenuItem, TextField,
-    Checkbox, FormControlLabel, Button, Card, CardContent, Divider
+    Box, Typography, FormControl, InputLabel, Select, MenuItem, TextField,
+    Checkbox, FormControlLabel, Button, Card, CardContent, Divider,
+    IconButton, Tooltip
 } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 import Layout from '../components/layout/Layout';
+import dayjs from 'dayjs';
 
 function Reservas() {
     const { usuario } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Estados principales del componente
     const [lugares, setLugares] = useState([]);
     const [lugarId, setLugarId] = useState('');
-    const [cantidadPersonas, setCantidadPersonas] = useState(1);
+    const [cantidadPersonas, setCantidadPersonas] = useState(0);
     const [personas, setPersonas] = useState([]);
-    const [fechaInicio, setFechaInicio] = useState('');
-    const [fechaFin, setFechaFin] = useState('');
+    const [fechaInicio, setFechaInicio] = useState(null);
+    const [fechaFin, setFechaFin] = useState(null);
     const [excesoPersonas, setExcesoPersonas] = useState(false);
     const [reservasExistentes, setReservasExistentes] = useState([]);
     const [llevaMascotas, setLlevaMascotas] = useState(false);
 
-    // Carga inicial de lugares desde la API
     useEffect(() => {
         fetch('https://localhost:7224/api/lugares')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar lugares'))
@@ -41,11 +66,10 @@ function Reservas() {
             .catch(console.error);
     }, []);
 
-    // Obtiene reservas existentes del lugar seleccionado
     useEffect(() => {
         if (lugarId) {
             fetch(`https://localhost:7224/api/reservas/lugar/${lugarId}`)
-                .then(res => res.ok ? res.json() : Promise.reject('Error al cargar reservas existentes'))
+                .then(res => res.ok ? res.json() : Promise.reject('Error al cargar reservas'))
                 .then(setReservasExistentes)
                 .catch(console.error);
         } else {
@@ -53,7 +77,6 @@ function Reservas() {
         }
     }, [lugarId]);
 
-    // Extrae el máximo de personas recomendado de un lugar
     const obtenerMaximoPersonas = (id) => {
         const lugar = lugares.find(l => l.id === parseInt(id));
         if (lugar?.personasRecomendadas) {
@@ -63,26 +86,19 @@ function Reservas() {
         return null;
     };
 
-    // Verifica si el nuevo horario de reserva se superpone con alguna existente
     const hayConflictoReserva = (inicio, fin) => {
-        const nuevaInicio = new Date(inicio);
-        const nuevaFin = new Date(fin);
         return reservasExistentes.some(reserva => {
             const reservaInicio = new Date(reserva.tiempoInicio);
             const reservaFin = new Date(reserva.tiempoFin);
-            return (nuevaInicio < reservaFin && nuevaFin > reservaInicio);
+            return (inicio < reservaFin && fin > reservaInicio);
         });
     };
 
-    // Calcula el número de días entre dos fechas
     const calcularDiasEntre = (inicio, fin) => {
-        const ini = new Date(inicio);
-        const fi = new Date(fin);
-        const diffTime = fi - ini;
+        const diffTime = fin - inicio;
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
-    // Determina la categoría de edad de una persona
     const clasificarEdad = (edad) => {
         const e = Number(edad);
         if (isNaN(e) || e < 0) return '';
@@ -92,7 +108,6 @@ function Reservas() {
         return 'Adulto Mayor';
     };
 
-    // Al cambiar el lugar, valida límite de personas
     const handleLugarChange = (e) => {
         const nuevoId = e.target.value;
         setLugarId(nuevoId);
@@ -100,19 +115,31 @@ function Reservas() {
         setExcesoPersonas(max && cantidadPersonas > max);
     };
 
-    // Al cambiar la cantidad de personas, actualiza estructura de datos
-    const handleCantidadPersonasChange = (e) => {
-        const cantidad = parseInt(e.target.value);
-        setCantidadPersonas(cantidad);
-        const max = obtenerMaximoPersonas(lugarId);
-        setExcesoPersonas(max && cantidad > max);
+    const actualizarPersonas = (cantidad) => {
         const nuevasPersonas = Array.from({ length: cantidad }, (_, i) => personas[i] || {
             nombre: '', apellido: '', edad: '', discapacidad: false, descripcionDiscapacidad: '', clasificacionEdad: ''
         });
         setPersonas(nuevasPersonas);
     };
 
-    // Actualiza información de una persona individual del array
+    const incrementarCantidad = () => {
+        const nuevaCantidad = cantidadPersonas + 1;
+        setCantidadPersonas(nuevaCantidad);
+        actualizarPersonas(nuevaCantidad);
+        const max = obtenerMaximoPersonas(lugarId);
+        setExcesoPersonas(max && nuevaCantidad > max);
+    };
+
+    const decrementarCantidad = () => {
+        if (cantidadPersonas > 0) {
+            const nuevaCantidad = cantidadPersonas - 1;
+            setCantidadPersonas(nuevaCantidad);
+            actualizarPersonas(nuevaCantidad);
+            const max = obtenerMaximoPersonas(lugarId);
+            setExcesoPersonas(max && nuevaCantidad > max);
+        }
+    };
+
     const handlePersonaChange = (index, campo, valor) => {
         const nuevasPersonas = [...personas];
         nuevasPersonas[index][campo] = valor;
@@ -122,42 +149,34 @@ function Reservas() {
         setPersonas(nuevasPersonas);
     };
 
-    const handleMascotasChange = (e) => {
-        setLlevaMascotas(e.target.checked);
-    };
-
-    /**
-     * handleSubmit: valida todos los campos de reserva,
-     * calcula el costo total y redirige al componente de pago.
-     */
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!usuario?.id) return alert('Debe iniciar sesión para hacer una reserva.');
+
+        if (!usuario?.id) return alert('Debe iniciar sesión.');
         if (!lugarId || !fechaInicio || !fechaFin) return alert('Complete todos los campos.');
 
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
+        const inicio = fechaInicio.toDate();
+        const fin = fechaFin.toDate();
 
-        if (inicio >= fin) return alert('La fecha de inicio debe ser anterior a la fecha de fin.');
-        if ((fin - inicio) < 60 * 60 * 1000) return alert('La duración mínima es de una hora.');
-        if (hayConflictoReserva(fechaInicio, fechaFin)) return alert('Ya existe una reserva en ese horario.');
-        if (excesoPersonas) return alert('Cantidad de personas excede el máximo recomendado.');
-
+        if (inicio >= fin) return alert('La fecha de inicio debe ser anterior.');
+        if ((fin - inicio) < 60 * 60 * 1000) return alert('Duración mínima: 1 hora.');
+        if (hayConflictoReserva(inicio, fin)) return alert('Ya existe una reserva en ese horario.');
+        if (excesoPersonas) return alert('Excede el máximo recomendado.');
         for (const p of personas) {
-            if (!p.clasificacionEdad) return alert('Ingrese edades válidas para todas las personas.');
+            if (!p.clasificacionEdad) return alert('Edad inválida en al menos una persona.');
         }
 
-        const lugarSeleccionado = lugares.find(l => l.id === parseInt(lugarId));
-        const dias = calcularDiasEntre(fechaInicio, fechaFin);
-        const total = lugarSeleccionado ? lugarSeleccionado.precio * cantidadPersonas * dias : 0;
+        const lugar = lugares.find(l => l.id === parseInt(lugarId));
+        const dias = calcularDiasEntre(inicio, fin);
+        const total = lugar ? lugar.precio * cantidadPersonas * dias : 0;
 
         const reserva = {
             usuarioId: usuario.id,
             lugarId: parseInt(lugarId),
             cantidadPersonas,
             discapacidad: personas.some(p => p.discapacidad),
-            tiempoInicio: fechaInicio,
-            tiempoFin: fechaFin,
+            tiempoInicio: inicio,
+            tiempoFin: fin,
             personas,
             llevaMascotas,
             valorTotal: total
@@ -166,167 +185,155 @@ function Reservas() {
         navigate('/pagos', { state: reserva });
     };
 
-    // Cálculo dinámico de total para mostrar resumen
     const lugarSeleccionado = lugares.find(l => l.id === parseInt(lugarId));
-    const dias = fechaInicio && fechaFin ? calcularDiasEntre(fechaInicio, fechaFin) : 1;
+    const dias = fechaInicio && fechaFin ? calcularDiasEntre(fechaInicio.toDate(), fechaFin.toDate()) : 1;
     const total = lugarSeleccionado ? lugarSeleccionado.precio * cantidadPersonas * dias : 0;
 
     return (
         <Layout>
-            <Box sx={{ p: 4 }}>
-                <Typography variant="h4" gutterBottom>Reservar Lugar</Typography>
-                <form onSubmit={handleSubmit}>
-                    <Grid container spacing={4}>
-                        {/* Panel izquierdo: Formulario de reserva */}
-                        <Grid item xs={12} md={6}>
-                            <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <FormControl fullWidth>
-                                    <InputLabel id="lugar-select-label">Lugar</InputLabel>
-                                    <Select
-                                        labelId="lugar-select-label"
-                                        value={lugarId}
-                                        label="Lugar"
-                                        onChange={handleLugarChange}
-                                        required
-                                    >
-                                        <MenuItem value="">-- Seleccione --</MenuItem>
-                                        {lugares.map(lugar => (
-                                            <MenuItem key={lugar.id} value={lugar.id}>
-                                                {lugar.nombre} {lugar.personasRecomendadas ? `(${lugar.personasRecomendadas})` : ''}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-
-                                <TextField
-                                    label="Cantidad de Personas"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 20 }}
-                                    value={cantidadPersonas}
-                                    onChange={handleCantidadPersonasChange}
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                    {/* Formulario Izquierda */}
+                    <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column', p: 3, gap: 2 }}>
+                        <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                            <Typography variant="h5" gutterBottom>Reservar Lugar</Typography>
+                            <FormControl fullWidth margin="normal">
+                                <InputLabel id="lugar-label">Lugar</InputLabel>
+                                <Select
+                                    labelId="lugar-label"
+                                    value={lugarId}
+                                    label="Lugar"
+                                    onChange={handleLugarChange}
                                     required
-                                />
-                                {excesoPersonas && (
-                                    <Typography color="warning.main">
-                                        ⚠️ La cantidad de personas excede el máximo recomendado.
-                                    </Typography>
-                                )}
-
-                                <FormControlLabel
-                                    control={<Checkbox checked={llevaMascotas} onChange={handleMascotasChange} />}
-                                    label="¿Llevará mascotas?"
-                                />
-
-                                <TextField
-                                    label="Fecha y hora inicio"
-                                    type="datetime-local"
-                                    value={fechaInicio}
-                                    onChange={(e) => setFechaInicio(e.target.value)}
-                                    InputLabelProps={{ shrink: true }}
-                                    required
-                                />
-                                <TextField
-                                    label="Fecha y hora fin"
-                                    type="datetime-local"
-                                    value={fechaFin}
-                                    onChange={(e) => setFechaFin(e.target.value)}
-                                    InputLabelProps={{ shrink: true }}
-                                    required
-                                />
-                                <Button type="submit" variant="contained" color="primary">
-                                    Continuar a pago
-                                </Button>
-                            </Box>
-                        </Grid>
-
-                        {/* Panel derecho: Imagen y resumen */}
-                        <Grid item xs={12} md={6}>
-                            <Card>
-                                {lugarSeleccionado?.imagenUrl && (
-                                    <img
-                                        src={lugarSeleccionado.imagenUrl}
-                                        alt={lugarSeleccionado.nombre}
-                                        style={{ width: '100%', maxHeight: 240, objectFit: 'cover' }}
-                                    />
-                                )}
-                                <CardContent>
-                                    <Typography variant="h6">{lugarSeleccionado?.nombre || 'Lugar no seleccionado'}</Typography>
-                                    <Typography variant="body2" sx={{ mb: 2 }}>{lugarSeleccionado?.descripcion}</Typography>
-                                    <Divider sx={{ mb: 2 }} />
-                                    <Typography variant="subtitle1"><strong>Resumen de reserva:</strong></Typography>
-                                    <Typography><strong>Lugar:</strong> {lugarSeleccionado?.nombre || '-'}</Typography>
-                                    <Typography><strong>Cantidad Personas:</strong> {cantidadPersonas}</Typography>
-                                    <Typography><strong>Fechas:</strong> {fechaInicio ? new Date(fechaInicio).toLocaleString() : '-'} - {fechaFin ? new Date(fechaFin).toLocaleString() : '-'}</Typography>
-                                    <Typography><strong>Lleva mascotas:</strong> {llevaMascotas ? 'Sí' : 'No'}</Typography>
-                                    <Typography><strong>Total a pagar:</strong> ${total}</Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-
-                        {/* Panel inferior: Datos de las personas */}
-                        <Grid item xs={12}>
-                            <Box sx={{ mt: 4 }}>
-                                <Typography variant="h6" gutterBottom>Información de las Personas</Typography>
-                                <Grid container spacing={2}>
-                                    {personas.map((p, i) => (
-                                        <Grid item xs={12} md={6} key={i}>
-                                            <Card variant="outlined" sx={{ p: 2 }}>
-                                                <Typography variant="subtitle1">Persona {i + 1}</Typography>
-                                                <TextField
-                                                    label="Nombre"
-                                                    fullWidth
-                                                    margin="dense"
-                                                    value={p.nombre}
-                                                    onChange={(e) => handlePersonaChange(i, 'nombre', e.target.value)}
-                                                    required
-                                                />
-                                                <TextField
-                                                    label="Apellido"
-                                                    fullWidth
-                                                    margin="dense"
-                                                    value={p.apellido}
-                                                    onChange={(e) => handlePersonaChange(i, 'apellido', e.target.value)}
-                                                    required
-                                                />
-                                                <TextField
-                                                    label="Edad"
-                                                    type="number"
-                                                    fullWidth
-                                                    margin="dense"
-                                                    value={p.edad}
-                                                    onChange={(e) => handlePersonaChange(i, 'edad', e.target.value)}
-                                                    required
-                                                />
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={p.discapacidad}
-                                                            onChange={(e) => handlePersonaChange(i, 'discapacidad', e.target.checked)}
-                                                        />
-                                                    }
-                                                    label="Discapacidad"
-                                                />
-                                                {p.discapacidad && (
-                                                    <TextField
-                                                        label="Descripción discapacidad"
-                                                        fullWidth
-                                                        margin="dense"
-                                                        value={p.descripcionDiscapacidad}
-                                                        onChange={(e) => handlePersonaChange(i, 'descripcionDiscapacidad', e.target.value)}
-                                                    />
-                                                )}
-                                                <Typography variant="body2" color="textSecondary">
-                                                    Clasificación: {p.clasificacionEdad || 'No definida'}
-                                                </Typography>
-                                            </Card>
-                                        </Grid>
+                                >
+                                    <MenuItem value="">-- Seleccione --</MenuItem>
+                                    {lugares.map(l => (
+                                        <MenuItem key={l.id} value={l.id}>
+                                            {l.nombre} {l.personasRecomendadas }
+                                        </MenuItem>
                                     ))}
-                                </Grid>
+                                </Select>
+                            </FormControl>
+
+                            <Box display="flex" alignItems="center" gap={2} sx={{ my: 2 }}>
+                                <Typography>Personas:</Typography>
+                                <IconButton onClick={decrementarCantidad}><RemoveIcon /></IconButton>
+                                <Typography sx={{ width: 20, textAlign: 'center' }}>{cantidadPersonas}</Typography>
+                                <IconButton onClick={incrementarCantidad}><AddIcon /></IconButton>
                             </Box>
-                        </Grid>
-                    </Grid>
-                </form>
-            </Box>
+
+                            {excesoPersonas && (
+                                <Typography color="warning.main">
+                                    ⚠️ Cantidad excede el máximo recomendado.
+                                </Typography>
+                            )}
+
+                            <FormControlLabel
+                                control={<Checkbox checked={llevaMascotas} onChange={e => setLlevaMascotas(e.target.checked)} />}
+                                label="¿Llevará mascotas?"
+                            />
+
+                            <DateTimePicker
+                                label="Fecha y hora de inicio"
+                                value={fechaInicio}
+                                onChange={(val) => setFechaInicio(val)}
+                                slotProps={{ textField: { fullWidth: true, margin: 'normal' } }}
+                            />
+                            <DateTimePicker
+                                label="Fecha y hora de fin"
+                                value={fechaFin}
+                                onChange={(val) => setFechaFin(val)}
+                                slotProps={{ textField: { fullWidth: true, margin: 'normal' } }}
+                            />
+
+                            <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                                Continuar a pago
+                            </Button>
+                        </Box>
+
+                        {/* Tarjeta resumen */}
+                        <Card sx={{ display: 'flex', alignItems: 'stretch' }}>
+                            {lugarSeleccionado?.imagenUrl && (
+                                <Box
+                                    component="img"
+                                    src={lugarSeleccionado.imagenUrl}
+                                    alt={lugarSeleccionado.nombre}
+                                    sx={{ width: 150, height: '100%', objectFit: 'cover', borderTopLeftRadius: 8, borderBottomLeftRadius: 8 }}
+                                />
+                            )}
+                            <CardContent sx={{ flex: 1 }}>
+                                <Typography variant="h6">{lugarSeleccionado?.nombre || 'Lugar no seleccionado'}</Typography>
+                                <Typography variant="body2" gutterBottom>{lugarSeleccionado?.descripcion}</Typography>
+                                <Divider sx={{ my: 1 }} />
+                                <Typography><strong>Personas:</strong> {cantidadPersonas}</Typography>
+                                <Typography><strong>Inicio:</strong> {fechaInicio ? fechaInicio.format('DD/MM/YYYY HH:mm') : '-'}</Typography>
+                                <Typography><strong>Fin:</strong> {fechaFin ? fechaFin.format('DD/MM/YYYY HH:mm') : '-'}</Typography>
+                                <Typography><strong>Mascotas:</strong> {llevaMascotas ? 'Sí' : 'No'}</Typography>
+                                <Typography sx={{ mt: 1 }}><strong>Total:</strong> ${total}</Typography>
+                            </CardContent>
+                        </Card>
+                    </Box>
+
+                    {/* Contenedor Derecho - Personas */}
+                    <Box sx={{
+                        flex: 1,
+                        p: 3,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2
+                    }}>
+                        <Typography variant="h5">Información de las Personas</Typography>
+                        {personas.map((p, i) => (
+                            <Card key={i} variant="outlined" sx={{ p: 2 }}>
+                                <Typography variant="subtitle1">Persona {i + 1}</Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2}>
+                                    <TextField
+                                        label="Nombre"
+                                        value={p.nombre}
+                                        onChange={(e) => handlePersonaChange(i, 'nombre', e.target.value)}
+                                        size="small"
+                                    />
+                                    <TextField
+                                        label="Apellido"
+                                        value={p.apellido}
+                                        onChange={(e) => handlePersonaChange(i, 'apellido', e.target.value)}
+                                        size="small"
+                                    />
+                                    <TextField
+                                        label="Edad"
+                                        type="number"
+                                        value={p.edad}
+                                        onChange={(e) => handlePersonaChange(i, 'edad', e.target.value)}
+                                        size="small"
+                                    />
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={p.discapacidad}
+                                                onChange={(e) => handlePersonaChange(i, 'discapacidad', e.target.checked)}
+                                                size="small"
+                                            />
+                                        }
+                                        label="Discapacidad"
+                                    />
+                                    {p.discapacidad && (
+                                        <TextField
+                                            label="Descripción"
+                                            value={p.descripcionDiscapacidad}
+                                            onChange={(e) => handlePersonaChange(i, 'descripcionDiscapacidad', e.target.value)}
+                                            size="small"
+                                            fullWidth
+                                        />
+                                    )}
+                                </Box>
+                                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                                    Clasificación: {p.clasificacionEdad || 'No definida'}
+                                </Typography>
+                            </Card>
+                        ))}
+                    </Box>
+                </Box>
+            </LocalizationProvider>
         </Layout>
     );
 }

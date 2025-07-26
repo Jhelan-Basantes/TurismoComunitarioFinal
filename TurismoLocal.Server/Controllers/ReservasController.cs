@@ -7,6 +7,15 @@
 // Permite consultar, registrar, modificar y eliminar reservas en el sistema de turismo comunitario.
 // Utiliza Entity Framework Core y sigue el estándar RESTful.
 
+// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño  
+// Versión: TurismoLocal v9  
+// Fecha: 22/07/2025
+
+// Descripción general:
+// Este controlador gestiona las operaciones CRUD relacionadas con las reservas realizadas por los usuarios.
+// Permite consultar, registrar, modificar y eliminar reservas en el sistema de turismo comunitario.
+// Utiliza Entity Framework Core y sigue el estándar RESTful.
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TurismoLocal.Server.Data;
@@ -42,13 +51,28 @@ public class ReservasController : ControllerBase
         return reserva == null ? NotFound() : Ok(reserva);
     }
 
+    // ✅ NUEVO: GET: api/reservas/lugar/{lugarId}
+    // Devuelve todas las reservas asociadas a un lugar específico
+    [HttpGet("lugar/{lugarId}")]
+    public async Task<ActionResult<IEnumerable<Reserva>>> GetReservasPorLugar(int lugarId)
+    {
+        var reservas = await _context.Reservas
+            .Where(r => r.LugarId == lugarId)
+            .ToListAsync();
+
+        return Ok(reservas); // Devuelve lista vacía si no hay reservas
+    }
+
     // POST: api/reservas
     // Registra una nueva reserva en la base de datos
     [HttpPost]
     public async Task<ActionResult<Reserva>> PostReserva(Reserva reserva)
     {
+        reserva.FechaRegistro = DateTime.Now;
+
         _context.Reservas.Add(reserva);
         await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetReserva), new { id = reserva.Id }, reserva);
     }
 

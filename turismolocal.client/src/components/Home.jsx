@@ -1,16 +1,32 @@
-// components/Home.jsx
-/* 
-Equipo: Turismo Comunitario | Versión: 1.0 | Última actualización: julio 2025
-Descripción:
-Página principal del sistema que sirve como landing page para usuarios. Presenta:
-- Un banner dinámico con mensajes rotativos e imagen destacada.
-- Un buscador inteligente con autocompletado.
-- Botones de categorías filtrables por tipo de experiencia.
-- Recomendaciones personalizadas aleatorias.
-- Un llamado a la acción para explorar más.
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ *
+ * Descripción general:
+ * Este componente representa la página de inicio del sistema "TurismoLocal".
+ * Ofrece una experiencia interactiva con un banner dinámico, buscador inteligente,
+ * botones de categorías, recomendaciones personalizadas y una llamada a la acción.
+ * Utiliza tecnologías como React, Material UI, Framer Motion para animaciones
+ * y React Router para navegación dinámica entre vistas.
+ *
+ * Funcionalidades principales:
+ * - Carga y muestra una lista de lugares turísticos desde la API.
+ * - Muestra un banner con mensajes rotativos y una imagen destacada que cambia al hacer click.
+ * - Proporciona un buscador con autocompletado para filtrar destinos por nombre.
+ * - Presenta botones dinámicos de categorías basados en los datos disponibles.
+ * - Muestra recomendaciones personalizadas seleccionadas aleatoriamente.
+ * - Permite navegación a detalles específicos del lugar o al catálogo filtrado.
+ * - Incluye un llamado a la acción para redirigir al catálogo de destinos.
+ *
+ * Aspectos técnicos:
+ * - Uso de useEffect para cargar datos al inicio y manejar estados de carga y error.
+ * - Manejo de estados con useState para búsquedas, mensajes, imágenes y categorías.
+ * - Uso de useRef para mantener recomendaciones estables sin re-renderizados innecesarios.
+ * - Animaciones suaves con Framer Motion para mensajes en el banner.
+ * - Responsive design mediante Material UI y estilos adaptativos.
+ */
 
-Se utiliza React, MUI (Material UI), framer-motion para animaciones y React Router para navegación.
-*/
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,7 +40,7 @@ import StarIcon from '@mui/icons-material/Star';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { motion } from 'framer-motion';
 
-// Mensajes rotativos para el banner
+// Mensajes rotativos que se muestran en el banner principal
 const mensajes = [
     'Bienvenido',
     'Elige tu aventura',
@@ -34,19 +50,33 @@ const mensajes = [
 ];
 
 function Home() {
+    // Estado para los lugares cargados desde la API
     const [lugares, setLugares] = useState([]);
+
+    // Estados relacionados con la búsqueda de destinos
     const [busqueda, setBusqueda] = useState('');
     const [seleccionado, setSeleccionado] = useState(null);
+
+    // Estados para manejo de carga y errores
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
+
+    // Estado para cambiar el mensaje del banner dinámicamente
     const [mensajeIndex, setMensajeIndex] = useState(Math.floor(Math.random() * mensajes.length));
+
+    // Categorías únicas extraídas de los lugares
     const [categorias, setCategorias] = useState([]);
+
+    // Imagen actual que se muestra en el banner
     const [imagenCarrusel, setImagenCarrusel] = useState(null);
-    const recomendacionesRef = useRef([]); // Referencia para mantener recomendaciones estáticas
+
+    // Referencia para mantener las recomendaciones fijas aunque el componente se re-renderice
+    const recomendacionesRef = useRef([]);
+
     const navigate = useNavigate();
     const theme = useTheme();
 
-    // Carga de datos desde la API
+    // Efecto para cargar los lugares al montar el componente
     useEffect(() => {
         fetch('https://localhost:7224/api/lugares')
             .then(res => {
@@ -68,7 +98,11 @@ function Home() {
             });
     }, []);
 
-    // Selecciona elementos aleatorios del arreglo
+    /**
+     * Función utilitaria que selecciona elementos aleatorios de un arreglo.
+     * @param {Array} arr - arreglo de entrada
+     * @param {number} n - cantidad de elementos a seleccionar
+     */
     const seleccionarAleatorios = (arr, n) => {
         const copia = [...arr];
         const seleccionados = [];
@@ -79,7 +113,10 @@ function Home() {
         return seleccionados;
     };
 
-    // Lógica del botón o enter de búsqueda
+    /**
+     * Ejecuta una búsqueda basada en la entrada del usuario.
+     * Redirige a la página del destino si existe.
+     */
     const handleBuscar = () => {
         if (seleccionado) {
             navigate(`/lugar/${seleccionado.id}`);
@@ -91,17 +128,24 @@ function Home() {
         }
     };
 
-    // Redirige al catálogo filtrado por categoría
+    /**
+     * Redirige al catálogo filtrado por la categoría seleccionada.
+     * @param {string} categoria
+     */
     const handleCategoriaClick = (categoria) => {
         navigate(`/catalogo?categoria=${encodeURIComponent(categoria)}`);
     };
 
-    // Lanza búsqueda al presionar Enter
+    /**
+     * Ejecuta la búsqueda al presionar Enter.
+     */
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') handleBuscar();
     };
 
-    // Actualiza el mensaje e imagen del banner aleatoriamente
+    /**
+     * Actualiza el mensaje e imagen del banner aleatoriamente.
+     */
     const handleActualizarMensaje = () => {
         setMensajeIndex(Math.floor(Math.random() * mensajes.length));
         const nueva = seleccionarAleatorios(lugares, 1)[0];
@@ -110,7 +154,7 @@ function Home() {
 
     const recomendaciones = recomendacionesRef.current;
 
-    // Indicador de carga
+    // Render de carga mientras se obtienen los datos
     if (cargando) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -119,19 +163,19 @@ function Home() {
         );
     }
 
-    // Manejo de error en carga
+    // Render en caso de error
     if (error) return <p>Error: {error}</p>;
 
     return (
         <Layout>
-            {/* Banner con mensaje y buscador */}
+            {/* Banner principal con imagen, mensaje y buscador */}
             <Box
                 sx={{
                     position: 'relative',
                     width: '100%',
                     height: { xs: '300px', md: '600px' },
                     overflow: 'hidden',
-                    mt: '-64px' // Ajuste por superposición de Navbar
+                    mt: '-64px'
                 }}
             >
                 <img
@@ -162,7 +206,7 @@ function Home() {
                         zIndex: 1
                     }}
                 >
-                    {/* Mensaje animado */}
+                    {/* Animación del mensaje del banner */}
                     <motion.div
                         key={mensajeIndex}
                         initial={{ opacity: 0, y: -10 }}
@@ -215,7 +259,7 @@ function Home() {
                         )}
                     />
 
-                    {/* Botones de categorías */}
+                    {/* Botones de categorías dinámicas */}
                     <Box sx={{ mt: 3, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
                         {categorias.map((cat, idx) => (
                             <Button
@@ -239,7 +283,7 @@ function Home() {
                 </Box>
             </Box>
 
-            {/* Recomendaciones */}
+            {/* Sección de recomendaciones personalizadas */}
             <Divider sx={{ mt: 6, mb: 3 }} />
             <Container maxWidth={false} sx={{ px: 4 }}>
                 <Box sx={{ textAlign: 'center' }}>
@@ -260,6 +304,7 @@ function Home() {
                                     }}
                                     onClick={() => navigate(`/lugar/${lugar.id}`)}
                                 >
+                                    {/* Imagen del lugar */}
                                     {lugar.imagenUrl && (
                                         <CardMedia
                                             component="img"
@@ -269,9 +314,12 @@ function Home() {
                                             sx={{ objectFit: 'cover' }}
                                         />
                                     )}
+
+                                    {/* Contenido del lugar */}
                                     <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
                                         <Typography variant="h6">{lugar.nombre}</Typography>
-                                        {/* Descripción truncada con efecto de desvanecimiento */}
+
+                                        {/* Descripción truncada con gradiente */}
                                         <Box sx={{ position: 'relative', height: 60, overflow: 'hidden' }}>
                                             <Typography
                                                 variant="body2"
@@ -297,6 +345,7 @@ function Home() {
                                                 }}
                                             />
                                         </Box>
+
                                         {/* Precio y calificación */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="body2">${lugar.precio}</Typography>
@@ -307,6 +356,7 @@ function Home() {
                                                 <StarIcon fontSize="small" color="warning" />
                                             </Box>
                                         </Box>
+
                                         {/* Botón "Ver más" */}
                                         <Box sx={{ mt: 'auto' }}>
                                             <Button
@@ -329,7 +379,7 @@ function Home() {
                 </Box>
             </Container>
 
-            {/* Call to Action */}
+            {/* Llamado a la acción final */}
             <Box
                 sx={{
                     mt: 6,
@@ -366,4 +416,5 @@ function Home() {
     );
 }
 
+// Exportación principal del componente
 export default Home;

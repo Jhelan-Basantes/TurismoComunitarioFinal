@@ -1,16 +1,23 @@
 /**
- * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño  
  * Versión: TurismoLocal v9.  
- * Fecha: 22/07/2025
+ * Fecha: 22/07/2025  
  * 
- * Descripción:
- * Este componente muestra la "wishlist" o lista de lugares favoritos del usuario autenticado.
- * Recupera los lugares desde la API, filtra aquellos que están guardados como favoritos
- * (almacenados como un arreglo en la propiedad `wishlist` del usuario), y permite buscar,
- * visualizar y quitar lugares de la lista. También muestra el promedio de calificaciones de cada lugar.
+ * Descripción general:
+ * Componente que muestra la lista de lugares favoritos (wishlist) del usuario autenticado.
+ * 
+ * Funcionalidades:
+ * - Carga todos los lugares disponibles y las calificaciones promedio de cada uno desde la API.
+ * - Obtiene la lista de favoritos del usuario y permite filtrar la lista mediante búsqueda.
+ * - Permite agregar o quitar lugares de la wishlist con actualización directa al backend.
+ * - Muestra información relevante de cada lugar: imagen, nombre, descripción breve, precio y calificación promedio.
+ * - Permite a usuarios con rol Administrador o Guía eliminar lugares (funcionalidad pendiente de implementar).
+ * - Incluye manejo de errores y mensajes informativos para mejor experiencia de usuario.
  */
 
+
 import React, { useState, useEffect, useContext } from 'react';
+import Layout from '../components/layout/Layout';
 import {
     Box,
     Grid,
@@ -124,160 +131,162 @@ function Wishlist() {
     );
 
     return (
-        <Box sx={{ px: 4, py: 6 }}>
-            <Typography variant="h4" gutterBottom align="center">
-                Mis Lugares Favoritos
-            </Typography>
+        <Layout >
+            <Box sx={{ px: 4, py: 6 }}>
+                <Typography variant="h4" gutterBottom align="center">
+                    Mis Lugares Favoritos
+                </Typography>
 
-            {/* Barra de búsqueda */}
-            <Box
-                sx={{
-                    mb: 4,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#f1f1f1',
-                    borderRadius: 2,
-                    width: '100%',
-                    maxWidth: 400,
-                    mx: 'auto',
-                    px: 2,
-                }}
-            >
-                <SearchIcon color="action" />
-                <InputBase
-                    placeholder="Buscar en favoritos"
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    sx={{ ml: 1, flex: 1 }}
-                />
-            </Box>
+                {/* Barra de búsqueda */}
+                <Box
+                    sx={{
+                        mb: 4,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#f1f1f1',
+                        borderRadius: 2,
+                        width: '100%',
+                        maxWidth: 400,
+                        mx: 'auto',
+                        px: 2,
+                    }}
+                >
+                    <SearchIcon color="action" />
+                    <InputBase
+                        placeholder="Buscar en favoritos"
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        sx={{ ml: 1, flex: 1 }}
+                    />
+                </Box>
 
-            {/* Mensaje de error si falla la carga */}
-            {error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    {error}
-                </Alert>
-            )}
+                {/* Mensaje de error si falla la carga */}
+                {error && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {error}
+                    </Alert>
+                )}
 
-            {/* Mensaje si no hay resultados en favoritos */}
-            {lugaresFiltrados.length === 0 ? (
-                <Alert severity="info">No hay lugares favoritos que coincidan con "{busqueda}"</Alert>
-            ) : (
-                <Grid container spacing={4} justifyContent="center">
-                    {lugaresFiltrados.map(lugar => {
-                        const isFavorite = wishlist.includes(lugar.id);
+                {/* Mensaje si no hay resultados en favoritos */}
+                {lugaresFiltrados.length === 0 ? (
+                    <Alert severity="info">No hay lugares favoritos que coincidan con "{busqueda}"</Alert>
+                ) : (
+                    <Grid container spacing={4} justifyContent="center">
+                        {lugaresFiltrados.map(lugar => {
+                            const isFavorite = wishlist.includes(lugar.id);
 
-                        return (
-                            <Grid item key={lugar.id}>
-                                <Card
-                                    sx={{
-                                        width: 300,
-                                        height: 350,
-                                        position: 'relative',
-                                        boxShadow: 4,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                    }}
-                                >
-                                    {/* Botón para agregar o quitar de favoritos */}
-                                    <IconButton
-                                        onClick={() => handleWishlist(lugar.id)}
+                            return (
+                                <Grid item key={lugar.id}>
+                                    <Card
                                         sx={{
-                                            position: 'absolute',
-                                            top: 10,
-                                            right: 10,
-                                            zIndex: 2,
+                                            width: 300,
+                                            height: 350,
+                                            position: 'relative',
+                                            boxShadow: 4,
+                                            display: 'flex',
+                                            flexDirection: 'column',
                                         }}
-                                        disabled={!usuario}
                                     >
-                                        {isFavorite
-                                            ? <FavoriteIcon color="error" />
-                                            : <FavoriteBorderIcon color="action" />}
-                                    </IconButton>
+                                        {/* Botón para agregar o quitar de favoritos */}
+                                        <IconButton
+                                            onClick={() => handleWishlist(lugar.id)}
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 10,
+                                                right: 10,
+                                                zIndex: 2,
+                                            }}
+                                            disabled={!usuario}
+                                        >
+                                            {isFavorite
+                                                ? <FavoriteIcon color="error" />
+                                                : <FavoriteBorderIcon color="action" />}
+                                        </IconButton>
 
-                                    {/* Imagen del lugar */}
-                                    {lugar.imagenUrl && (
-                                        <CardMedia
-                                            component="img"
-                                            height="160"
-                                            image={lugar.imagenUrl}
-                                            alt={`Imagen de ${lugar.nombre}`}
-                                            sx={{ objectFit: 'cover' }}
-                                        />
-                                    )}
-
-                                    {/* Contenido del lugar */}
-                                    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                                        <Typography variant="h6">{lugar.nombre}</Typography>
-
-                                        {/* Descripción truncada con gradiente */}
-                                        <Box sx={{ position: 'relative', height: 60, overflow: 'hidden' }}>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                                sx={{
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 3,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                }}
-                                            >
-                                                {lugar.descripcion}
-                                            </Typography>
-
-                                            <Box
-                                                sx={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    height: 30,
-                                                    background: 'linear-gradient(to top, white, transparent)',
-                                                }}
+                                        {/* Imagen del lugar */}
+                                        {lugar.imagenUrl && (
+                                            <CardMedia
+                                                component="img"
+                                                height="160"
+                                                image={lugar.imagenUrl}
+                                                alt={`Imagen de ${lugar.nombre}`}
+                                                sx={{ objectFit: 'cover' }}
                                             />
-                                        </Box>
+                                        )}
 
-                                        {/* Precio y calificación */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
-                                            <Typography variant="body2">${lugar.precio}</Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                <Typography variant="body2">
-                                                    {calificaciones[lugar.id]?.toFixed(1) ?? '0.0'}
-                                                </Typography>
-                                                <StarIcon fontSize="small" color="warning" />
-                                            </Box>
-                                        </Box>
+                                        {/* Contenido del lugar */}
+                                        <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
+                                            <Typography variant="h6">{lugar.nombre}</Typography>
 
-                                        {/* Botones de acción */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                startIcon={<VisibilityIcon />}
-                                                onClick={() => verDetalle(lugar.id)}
-                                            >
-                                                Ver más
-                                            </Button>
-
-                                            {esAdminOGuia && (
-                                                <IconButton
-                                                    color="error"
-                                                    onClick={() => eliminarLugar(lugar.id)}
+                                            {/* Descripción truncada con gradiente */}
+                                            <Box sx={{ position: 'relative', height: 60, overflow: 'hidden' }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 3,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    }}
                                                 >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            )}
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        );
-                    })}
-                </Grid>
-            )}
-        </Box>
+                                                    {lugar.descripcion}
+                                                </Typography>
+
+                                                <Box
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        bottom: 0,
+                                                        left: 0,
+                                                        right: 0,
+                                                        height: 30,
+                                                        background: 'linear-gradient(to top, white, transparent)',
+                                                    }}
+                                                />
+                                            </Box>
+
+                                            {/* Precio y calificación */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
+                                                <Typography variant="body2">${lugar.precio}</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Typography variant="body2">
+                                                        {calificaciones[lugar.id]?.toFixed(1) ?? '0.0'}
+                                                    </Typography>
+                                                    <StarIcon fontSize="small" color="warning" />
+                                                </Box>
+                                            </Box>
+
+                                            {/* Botones de acción */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    startIcon={<VisibilityIcon />}
+                                                    onClick={() => verDetalle(lugar.id)}
+                                                >
+                                                    Ver más
+                                                </Button>
+
+                                                {esAdminOGuia && (
+                                                    <IconButton
+                                                        color="error"
+                                                        onClick={() => eliminarLugar(lugar.id)}
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            );
+                        })}
+                    </Grid>
+                )}
+            </Box>
+        </Layout >
     );
 }
 

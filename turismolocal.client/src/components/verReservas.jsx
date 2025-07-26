@@ -4,11 +4,22 @@
  * Fecha: 22/07/2025  
  * 
  * Descripción general:
- * Este componente muestra la lista de reservas realizadas por los usuarios.
- * Permite visualizar detalles de cada reserva (incluyendo personas), editar información básica
- * como fechas y número de personas, y eliminar reservas. El diseño incluye animaciones,
- * expansión de contenido, y notificaciones tipo Snackbar para acciones exitosas o fallidas.
+ * Componente que muestra la lista de reservas realizadas por los usuarios autenticados.
+ * Para cada reserva, se presenta información básica como lugar, cantidad de personas, fechas
+ * y permite expandir para ver detalles específicos de cada persona incluida en la reserva.
+ * 
+ * Funcionalidades destacadas:
+ * - Obtiene reservas y lugares relacionados desde la API con autorización Bearer Token.
+ * - Permite eliminar reservas con confirmación previa y actualiza la vista en tiempo real.
+ * - Utiliza animaciones de entrada/salida y expansión para mejorar la experiencia UX.
+ * - Muestra notificaciones tipo Snackbar para informar al usuario sobre acciones exitosas o errores.
+ * - Incluye manejo de estados de carga y errores de forma clara.
+ * 
+ * UI:
+ * - Cada reserva aparece en una tarjeta con imagen del lugar, detalles resumidos y controles para eliminar y expandir.
+ * - La tabla expandible despliega personas vinculadas a la reserva, mostrando datos relevantes (nombre, discapacidad, etc.).
  */
+
 
 import React, { useEffect, useState, useContext } from 'react';
 import Layout from '../components/layout/Layout';
@@ -17,20 +28,16 @@ import { AuthContext } from '../context/AuthContext';
 import {
     Card, CardContent, Typography, Grid, Collapse,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    IconButton, Slide, Avatar, Snackbar, Alert, TextField, Box
+    IconButton, Slide, Avatar, Snackbar, Alert
 } from '@mui/material';
 
 import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SaveIcon from '@mui/icons-material/Save';
-import CloseIcon from '@mui/icons-material/Close';
 import { styled } from '@mui/material/styles';
 
 // Botón de expansión animada para mostrar detalles de personas en la reserva
 const ExpandMore = styled((props) => {
     const { expand, ...other } = props;
-    void expand;
     return <IconButton {...other} />;
 })(({ theme, expand }) => ({
     transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
@@ -41,9 +48,8 @@ const ExpandMore = styled((props) => {
 }));
 
 function VerReservas() {
-    const { usuario } = useContext(AuthContext); // Obtiene el usuario autenticado
+    const { usuario } = useContext(AuthContext);
 
-    // Estados para manejar datos y UI
     const [reservas, setReservas] = useState([]);
     const [lugares, setLugares] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -52,16 +58,6 @@ function VerReservas() {
     const [eliminandoId, setEliminandoId] = useState(null);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    const [editandoId, setEditandoId] = useState(null); // ID de la reserva que se está editando
-    const [formData, setFormData] = useState({
-        cantidadPersonas: '',
-        tiempoInicio: '',
-        tiempoFin: ''
-    });
-
-    /**
-     * Función que carga reservas y lugares desde la API
-     */
     const cargarDatos = () => {
         setCargando(true);
         Promise.all([
@@ -89,14 +85,10 @@ function VerReservas() {
             });
     };
 
-    // Carga inicial de datos al montar el componente
     useEffect(() => {
         cargarDatos();
     }, []);
 
-    /**
-     * Elimina una reserva por ID con confirmación previa
-     */
     const eliminarReserva = async (id) => {
         if (!window.confirm('¿Seguro que deseas eliminar esta reserva?')) return;
         setEliminandoId(id);
@@ -118,69 +110,10 @@ function VerReservas() {
         }
     };
 
-    /**
-     * Alterna el despliegue del detalle de una reserva
-     */
     const toggleExpand = (id) => {
         setExpandidaId(prev => (prev === id ? null : id));
     };
 
-    /**
-     * Prepara el formulario para editar una reserva específica
-     */
-    const handleEditClick = (reserva) => {
-        setEditandoId(reserva.id);
-        setFormData({
-            cantidadPersonas: reserva.cantidadPersonas,
-            tiempoInicio: new Date(reserva.tiempoInicio).toISOString().slice(0, 16),
-            tiempoFin: new Date(reserva.tiempoFin).toISOString().slice(0, 16),
-        });
-    };
-
-    /**
-     * Maneja el cambio de valores del formulario editable
-     */
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    /**
-     * Guarda los cambios realizados en una reserva
-     */
-    const guardarCambios = async (id) => {
-        try {
-            const body = {
-                ...reservas.find(r => r.id === id),
-                cantidadPersonas: parseInt(formData.cantidadPersonas),
-                tiempoInicio: formData.tiempoInicio,
-                tiempoFin: formData.tiempoFin
-            };
-
-            const res = await fetch(`https://localhost:7224/api/reservas`, {
-                method: 'PUT',
-                headers: {
-                    Authorization: `Bearer ${usuario?.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(body)
-            });
-
-            if (!res.ok) throw new Error(await res.text());
-
-            setReservas(prev =>
-                prev.map(r => (r.id === id ? { ...r, ...body } : r))
-            );
-            setSnackbar({ open: true, message: 'Reserva actualizada', severity: 'success' });
-            setEditandoId(null);
-        } catch (err) {
-            setSnackbar({ open: true, message: `Error: ${err.message}`, severity: 'error' });
-        }
-    };
-
-    /**
-     * Cierra el mensaje de notificación (Snackbar)
-     */
     const handleCloseSnackbar = () => {
         setSnackbar(prev => ({ ...prev, open: false }));
     };
@@ -192,7 +125,6 @@ function VerReservas() {
         <Layout>
             <Typography variant="h4" gutterBottom>Lista de Reservas</Typography>
 
-            {/* Mapeo de reservas */}
             <Grid container direction="column" spacing={2}>
                 {reservas.map((r) => {
                     const lugar = lugares.find(l => l.id === r.lugarId);
@@ -203,7 +135,6 @@ function VerReservas() {
                     return (
                         <Slide key={r.id} direction="left" in={eliminandoId !== r.id} mountOnEnter unmountOnExit>
                             <Grid item>
-                                {/* Tarjeta principal de la reserva */}
                                 <Card sx={{ display: 'flex', alignItems: 'center', padding: 2 }}>
                                     <Avatar
                                         variant="rounded"
@@ -212,65 +143,14 @@ function VerReservas() {
                                     />
                                     <CardContent sx={{ flexGrow: 1 }}>
                                         <Typography variant="h6">Reserva #{r.id} - {nombreLugar}</Typography>
-
-                                        {/* Modo de edición */}
-                                        {editandoId === r.id ? (
-                                            <Box sx={{ mt: 1 }}>
-                                                <TextField
-                                                    name="cantidadPersonas"
-                                                    label="Personas"
-                                                    type="number"
-                                                    value={formData.cantidadPersonas}
-                                                    onChange={handleInputChange}
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                />
-                                                <TextField
-                                                    name="tiempoInicio"
-                                                    label="Inicio"
-                                                    type="datetime-local"
-                                                    value={formData.tiempoInicio}
-                                                    onChange={handleInputChange}
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                />
-                                                <TextField
-                                                    name="tiempoFin"
-                                                    label="Fin"
-                                                    type="datetime-local"
-                                                    value={formData.tiempoFin}
-                                                    onChange={handleInputChange}
-                                                    fullWidth
-                                                />
-                                            </Box>
-                                        ) : (
-                                            <>
-                                                <Typography variant="body2">Personas: {r.cantidadPersonas}</Typography>
-                                                <Typography variant="body2">Inicio: {new Date(r.tiempoInicio).toLocaleString()}</Typography>
-                                                <Typography variant="body2">Fin: {new Date(r.tiempoFin).toLocaleString()}</Typography>
-                                            </>
-                                        )}
+                                        <Typography variant="body2">Personas: {r.cantidadPersonas}</Typography>
+                                        <Typography variant="body2">Inicio: {new Date(r.tiempoInicio).toLocaleString()}</Typography>
+                                        <Typography variant="body2">Fin: {new Date(r.tiempoFin).toLocaleString()}</Typography>
                                     </CardContent>
 
-                                    {/* Acciones */}
                                     <IconButton onClick={() => eliminarReserva(r.id)} disabled={eliminandoId === r.id}>
                                         <DeleteIcon color="error" />
                                     </IconButton>
-
-                                    {editandoId === r.id ? (
-                                        <>
-                                            <IconButton onClick={() => guardarCambios(r.id)}>
-                                                <SaveIcon color="success" />
-                                            </IconButton>
-                                            <IconButton onClick={() => setEditandoId(null)}>
-                                                <CloseIcon color="error" />
-                                            </IconButton>
-                                        </>
-                                    ) : (
-                                        <IconButton onClick={() => handleEditClick(r)}>
-                                            <EditIcon color="primary" />
-                                        </IconButton>
-                                    )}
 
                                     <ExpandMore
                                         expand={expandidaId === r.id}
@@ -282,7 +162,6 @@ function VerReservas() {
                                     </ExpandMore>
                                 </Card>
 
-                                {/* Tabla con información detallada de personas */}
                                 <Collapse in={expandidaId === r.id} timeout="auto" unmountOnExit>
                                     <TableContainer sx={{ mt: 1 }}>
                                         <Table size="small">
@@ -317,7 +196,6 @@ function VerReservas() {
                 })}
             </Grid>
 
-            {/* Notificación de acción */}
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={4000}

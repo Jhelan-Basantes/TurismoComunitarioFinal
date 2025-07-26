@@ -1,15 +1,31 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  Fecha: 22/07/2025
+ * Versión: TurismoLocal v9.  
+ * Fecha: 22/07/2025
+ *
+ * Descripción general:
+ * Componente que proporciona la interfaz y funcionalidad para que los usuarios 
+ * puedan iniciar sesión en el sistema "TurismoLocal".
  * 
- * Descripción:
- * Componente de inicio de sesión que permite a los usuarios autenticarse en el sistema.
- * Valida credenciales contra la API backend y gestiona el contexto de autenticación.
- * Si el usuario es autenticado correctamente, se guarda su información en localStorage
- * y se redirige a la página principal.
+ * Funcionalidades principales:
+ * - Permite ingresar el nombre de usuario y contraseña mediante un formulario controlado.
+ * - Envía una solicitud POST a la API backend para autenticar las credenciales.
+ * - Si la autenticación es exitosa, almacena la información del usuario en el contexto global 
+ *   y en localStorage para persistencia.
+ * - Maneja y muestra mensajes de error para credenciales inválidas o problemas de conexión.
+ * - Redirige al usuario a la página principal tras un inicio de sesión exitoso.
+ * - Proporciona un enlace para que usuarios sin cuenta puedan ir a la página de registro.
+ * 
+ * Tecnologías y librerías:
+ * - React para gestión del estado y renderizado.
+ * - Material UI para el diseño visual y componentes UI.
+ * - React Router para la navegación dinámica.
+ * - Context API para manejo global del estado de autenticación.
  */
 
 import React, { useState, useContext } from 'react';
+import Layout from '../components/layout/Layout';
+
 import {
     Box,
     Card,
@@ -69,75 +85,79 @@ function Login() {
     };
 
     return (
-        <Box
-            sx={{
-                height: '100vh',
-                bgcolor: '#f0f4f8',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-            }}
-        >
-            {/* Tarjeta que contiene el formulario de inicio de sesión */}
-            <Card sx={{ width: 400, p: 2, boxShadow: 6 }}>
-                <CardContent>
-                    <Typography variant="h5" gutterBottom align="center">
-                        Iniciar Sesión
-                    </Typography>
+          <Layout >
 
-                    {/* Muestra mensaje de error si lo hay */}
-                    {message && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {message}
-                        </Alert>
-                    )}
-
-                    {/* Formulario controlado */}
-                    <Box component="form" onSubmit={handleSubmit} noValidate>
-                        <TextField
-                            fullWidth
-                            label="Usuario"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            margin="normal"
-                            required
-                        />
-                        <TextField
-                            fullWidth
-                            label="Contraseña"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            margin="normal"
-                            required
-                        />
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            fullWidth
-                            sx={{ mt: 2 }}
-                        >
-                            Entrar
-                        </Button>
-                    </Box>
-
-                    {/* Enlace para registro de nuevos usuarios */}
-                    <Stack direction="row" justifyContent="center" mt={2}>
-                        <Typography variant="body2">
-                            ¿No tienes cuenta?{' '}
-                            <Link
-                                component="button"
-                                variant="body2"
-                                onClick={() => navigate('/registro')}
-                                sx={{ textDecoration: 'underline' }}
-                            >
-                                Regístrate
-                            </Link>
+            <Box
+                sx={{
+                    height: '100vh',
+                    bgcolor: '#f0f4f8',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+            >
+                {/* Tarjeta que contiene el formulario de inicio de sesión */}
+                <Card sx={{ width: 400, p: 2, boxShadow: 6 }}>
+                    <CardContent>
+                        <Typography variant="h5" gutterBottom align="center">
+                            Iniciar Sesión
                         </Typography>
-                    </Stack>
-                </CardContent>
-            </Card>
-        </Box>
+
+                        {/* Muestra mensaje de error si lo hay */}
+                        {message && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {message}
+                            </Alert>
+                        )}
+
+                        {/* Formulario controlado */}
+                        <Box component="form" onSubmit={handleSubmit} noValidate>
+                            <TextField
+                                fullWidth
+                                label="Usuario"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                margin="normal"
+                                required
+                            />
+                            <TextField
+                                fullWidth
+                                label="Contraseña"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                margin="normal"
+                                required
+                            />
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                sx={{ mt: 2 }}
+                            >
+                                Entrar
+                            </Button>
+                        </Box>
+
+                        {/* Enlace para registro de nuevos usuarios */}
+                        <Stack direction="row" justifyContent="center" mt={2}>
+                            <Typography variant="body2">
+                                ¿No tienes cuenta?{' '}
+                                <Link
+                                    component="button"
+                                    variant="body2"
+                                    onClick={() => navigate('/registro')}
+                                    sx={{ textDecoration: 'underline' }}
+                                >
+                                    Regístrate
+                                </Link>
+                            </Typography>
+                        </Stack>
+                    </CardContent>
+                </Card>
+            </Box>
+        </Layout >
+
     );
 }
 

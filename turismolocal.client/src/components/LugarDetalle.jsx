@@ -4,12 +4,25 @@
  * Fecha: 22/07/2025
  *
  * Descripción general:
- * Este componente representa la vista de detalle de un lugar turístico. 
- * Muestra información completa del lugar (imagen, descripción, precio, ubicación, guía asignado), 
- * permite realizar reservas, ver comentarios y publicar nuevas opiniones. 
- * Se conecta a múltiples endpoints de la API para obtener y enviar datos. 
- * También gestiona el comportamiento de usuario autenticado (comentarios, eliminación de opiniones).
+ * Componente que muestra el detalle completo de un lugar turístico seleccionado.
+ * 
+ * Funcionalidades:
+ * - Obtiene el ID del lugar desde la URL y carga la información correspondiente 
+ *   (datos del lugar, usuarios y opiniones) desde la API.
+ * - Presenta información completa del lugar: imagen, descripción, precio, ubicación, categoría y guía asignado.
+ * - Permite al usuario autenticado realizar una reserva (redirección a página de reservas).
+ * - Muestra comentarios/opiniones sobre el lugar con calificaciones y fechas.
+ * - Permite a usuarios autenticados agregar nuevos comentarios con calificación.
+ * - Permite a usuarios con roles de "Administrador" o "Guia" eliminar comentarios existentes.
+ * - Gestiona estados de carga y errores, mostrando mensajes apropiados.
+ * 
+ * Tecnologías y librerías:
+ * - React para manejo del estado y ciclo de vida.
+ * - Material UI para componentes visuales y diseño responsivo.
+ * - React Router para navegación y obtención de parámetros de ruta.
+ * - Context API para gestión global de usuario autenticado.
  */
+
 
 import React, { useState, useEffect, useContext } from 'react';
 import {
@@ -27,8 +40,9 @@ import {
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Layout from './layout/Layout';
 
-function DetalleLugar() {
+function LugarDetalle() {
     // Obtiene el parámetro `id` de la URL para identificar el lugar a mostrar
     const { id } = useParams();
 
@@ -146,145 +160,147 @@ function DetalleLugar() {
     const guia = usuarios.find(u => u.id === lugar.idGuia);
 
     return (
-        <Box sx={{ px: 4, py: 5 }}>
-            {/* Botón para volver al catálogo */}
-            <Button variant="outlined" onClick={() => navigate('/catalogo')} sx={{ mb: 3 }}>
-                &larr; Volver al catálogo
-            </Button>
+        <Layout >
+            <Box sx={{ px: 4, py: 5 }}>
+                {/* Botón para volver al catálogo */}
+                <Button variant="outlined" onClick={() => navigate('/catalogo')} sx={{ mb: 3 }}>
+                    &larr; Volver al catálogo
+                </Button>
 
-            {/* Sección principal: Imagen + Información */}
-            <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
-                {/* Tarjeta con imagen y descripción */}
-                <Card sx={{ flex: 1 }}>
-                    {lugar.imagenUrl && (
-                        <CardMedia
-                            component="img"
-                            height="300"
-                            image={lugar.imagenUrl}
-                            alt={lugar.nombre}
-                            sx={{ objectFit: 'cover' }}
-                        />
-                    )}
-                    <CardContent>
-                        <Typography variant="h5" gutterBottom>
-                            {lugar.nombre}
-                        </Typography>
-                        <Typography variant="body1" paragraph>
-                            {lugar.descripcion}
-                        </Typography>
-                    </CardContent>
-                </Card>
-
-                {/* Tarjeta con detalles adicionales */}
-                <Card sx={{ flex: 1 }}>
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            Información del Lugar
-                        </Typography>
-                        <Divider sx={{ mb: 2 }} />
-
-                        <Typography><strong>💲 Valor por persona:</strong> ${lugar.precio}</Typography>
-                        <Typography><strong>📍 Ubicación:</strong> {lugar.ubicacion}</Typography>
-                        <Typography><strong>🏷️ Categoría:</strong> {lugar.categoria || 'Sin categoría'}</Typography>
-                        <Typography><strong>👤 Guía responsable:</strong> {guia ? guia.username : 'No asignado'}</Typography>
-
-                        <Box mt={3}>
-                            <Button variant="contained" onClick={() => navigate('/reservas/')}>
-                                Reservar este lugar
-                            </Button>
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Box>
-
-            {/* Sección de Comentarios */}
-            <Box mt={5}>
-                <Typography variant="h6" gutterBottom>Comentarios</Typography>
-                <Divider sx={{ mb: 2 }} />
-
-                {/* Lista de comentarios existentes */}
-                {opiniones.length === 0 ? (
-                    <Typography>No hay comentarios todavía.</Typography>
-                ) : (
-                    <Stack spacing={2} mb={3}>
-                        {opiniones.map((op) => {
-                            const usuarioOp = usuarios.find(u => u.id === op.usuarioId);
-                            const puedeEliminar = usuario && (
-                                usuario.role === "Administrador" || usuario.role === "Guia"
-                            );
-
-                            return (
-                                <Card key={op.id}>
-                                    <CardContent>
-                                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="subtitle1" fontWeight="bold">
-                                                {usuarioOp ? usuarioOp.username : "Usuario desconocido"}
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                {new Date(op.fecha).toLocaleString()}
-                                            </Typography>
-                                        </Box>
-                                        <Rating value={op.calificacion} readOnly />
-                                        <Typography mt={1}>{op.comentario}</Typography>
-                                        {puedeEliminar && (
-                                            <Button
-                                                variant="outlined"
-                                                color="error"
-                                                size="small"
-                                                sx={{ mt: 1 }}
-                                                onClick={() => handleEliminar(op.id)}
-                                            >
-                                                Eliminar
-                                            </Button>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </Stack>
-                )}
-
-                {/* Formulario para nuevo comentario */}
-                {usuario ? (
-                    <Card>
+                {/* Sección principal: Imagen + Información */}
+                <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
+                    {/* Tarjeta con imagen y descripción */}
+                    <Card sx={{ flex: 1 }}>
+                        {lugar.imagenUrl && (
+                            <CardMedia
+                                component="img"
+                                height="300"
+                                image={lugar.imagenUrl}
+                                alt={lugar.nombre}
+                                sx={{ objectFit: 'cover' }}
+                            />
+                        )}
                         <CardContent>
-                            <Typography variant="subtitle1" gutterBottom>
-                                Deja tu comentario
+                            <Typography variant="h5" gutterBottom>
+                                {lugar.nombre}
                             </Typography>
-                            <TextField
-                                fullWidth
-                                multiline
-                                minRows={3}
-                                label="Escribe tu opinión..."
-                                variant="outlined"
-                                value={nuevoComentario}
-                                onChange={(e) => setNuevoComentario(e.target.value)}
-                                sx={{ mb: 2 }}
-                            />
-                            <Typography><strong>Calificación:</strong></Typography>
-                            <Rating
-                                value={nuevaCalificacion}
-                                onChange={(e, newValue) => setNuevaCalificacion(newValue)}
-                                sx={{ mb: 2 }}
-                            />
-                            <Button variant="contained" onClick={handlePublicar}>
-                                Publicar Comentario
-                            </Button>
+                            <Typography variant="body1" paragraph>
+                                {lugar.descripcion}
+                            </Typography>
                         </CardContent>
                     </Card>
-                ) : (
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                        <Typography variant="body1" gutterBottom>
-                            ¿Quieres dejar un comentario?
-                        </Typography>
-                        <Button variant="contained" onClick={() => navigate('/login')}>
-                            Inicia Sesión o Regístrate
-                        </Button>
-                    </Alert>
-                )}
+
+                    {/* Tarjeta con detalles adicionales */}
+                    <Card sx={{ flex: 1 }}>
+                        <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                                Información del Lugar
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+
+                            <Typography><strong>💲 Valor por persona:</strong> ${lugar.precio}</Typography>
+                            <Typography><strong>📍 Ubicación:</strong> {lugar.ubicacion}</Typography>
+                            <Typography><strong>🏷️ Categoría:</strong> {lugar.categoria || 'Sin categoría'}</Typography>
+                            <Typography><strong>👤 Guía responsable:</strong> {guia ? guia.username : 'No asignado'}</Typography>
+
+                            <Box mt={3}>
+                                <Button variant="contained" onClick={() => navigate('/reservas/')}>
+                                    Reservar este lugar
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Box>
+
+                {/* Sección de Comentarios */}
+                <Box mt={5}>
+                    <Typography variant="h6" gutterBottom>Comentarios</Typography>
+                    <Divider sx={{ mb: 2 }} />
+
+                    {/* Lista de comentarios existentes */}
+                    {opiniones.length === 0 ? (
+                        <Typography>No hay comentarios todavía.</Typography>
+                    ) : (
+                        <Stack spacing={2} mb={3}>
+                            {opiniones.map((op) => {
+                                const usuarioOp = usuarios.find(u => u.id === op.usuarioId);
+                                const puedeEliminar = usuario && (
+                                    usuario.role === "Administrador" || usuario.role === "Guia"
+                                );
+
+                                return (
+                                    <Card key={op.id}>
+                                        <CardContent>
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="subtitle1" fontWeight="bold">
+                                                    {usuarioOp ? usuarioOp.username : "Usuario desconocido"}
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    {new Date(op.fecha).toLocaleString()}
+                                                </Typography>
+                                            </Box>
+                                            <Rating value={op.calificacion} readOnly />
+                                            <Typography mt={1}>{op.comentario}</Typography>
+                                            {puedeEliminar && (
+                                                <Button
+                                                    variant="outlined"
+                                                    color="error"
+                                                    size="small"
+                                                    sx={{ mt: 1 }}
+                                                    onClick={() => handleEliminar(op.id)}
+                                                >
+                                                    Eliminar
+                                                </Button>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </Stack>
+                    )}
+
+                    {/* Formulario para nuevo comentario */}
+                    {usuario ? (
+                        <Card>
+                            <CardContent>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Deja tu comentario
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    minRows={3}
+                                    label="Escribe tu opinión..."
+                                    variant="outlined"
+                                    value={nuevoComentario}
+                                    onChange={(e) => setNuevoComentario(e.target.value)}
+                                    sx={{ mb: 2 }}
+                                />
+                                <Typography><strong>Calificación:</strong></Typography>
+                                <Rating
+                                    value={nuevaCalificacion}
+                                    onChange={(e, newValue) => setNuevaCalificacion(newValue)}
+                                    sx={{ mb: 2 }}
+                                />
+                                <Button variant="contained" onClick={handlePublicar}>
+                                    Publicar Comentario
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                            <Typography variant="body1" gutterBottom>
+                                ¿Quieres dejar un comentario?
+                            </Typography>
+                            <Button variant="contained" onClick={() => navigate('/login')}>
+                                Inicia Sesión o Regístrate
+                            </Button>
+                        </Alert>
+                    )}
+                </Box>
             </Box>
-        </Box>
+        </Layout >
     );
 }
 
-export default DetalleLugar;
+export default LugarDetalle;

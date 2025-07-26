@@ -1,13 +1,23 @@
 /**
  * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
- * Versión: TurismoLocal v9.  
+ * Versión: TurismoLocal v9.
  * Fecha: 22/07/2025
- * 
+ *
  * Descripción general:
- * Este archivo define dos temas personalizados (claro y oscuro) para la aplicación "Turismo Comunitario"
- * utilizando la biblioteca Material UI. Cada tema especifica la paleta de colores, el modo de visualización
- * y la tipografía base para asegurar una experiencia visual coherente y accesible.
+ * Este archivo configura dos temas personalizados para la aplicación "Turismo Comunitario"
+ * utilizando Material UI (MUI). Define un tema claro y uno oscuro para ofrecer una experiencia
+ * visual coherente y adaptable a las preferencias del usuario.
+ *
+ * Detalles:
+ * - Cada tema especifica su paleta de colores (fondo, texto, colores primarios y secundarios).
+ * - Se establece el modo (light u dark) para activar estilos correspondientes en MUI.
+ * - La tipografía base es 'Poppins' para mantener la identidad visual en ambos temas.
+ * 
+ * Uso:
+ * Estos temas pueden ser usados con el ThemeProvider de MUI para aplicar estilos globales
+ * según la preferencia o configuración del usuario.
  */
+
 
 import { createTheme } from '@mui/material/styles';
 

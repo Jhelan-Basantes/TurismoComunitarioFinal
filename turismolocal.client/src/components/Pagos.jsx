@@ -1,16 +1,27 @@
-// Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño 
-// Versión: TurismoLocal v9.  
-// Fecha: 22/07/2025
-// 
-// Descripción general del componente:
-// El componente `Pagos` permite al usuario confirmar y registrar el pago asociado a una reserva turística.
-// Muestra la información de los participantes, permite seleccionar el método de pago e ingresar el monto correspondiente.
-// Valida que el monto ingresado coincida con el valor total de la reserva, y luego realiza una petición POST para
-// registrar tanto la reserva como su pago en el backend. Si todo es exitoso, se muestra una animación de confetti
-// y un mensaje de confirmación.
+/**
+ * Autor: Jhelan Basantes, Sophia Chuquillangui, Esteban Guaña, Arely Pazmiño
+ * Versión: TurismoLocal v9.
+ * Fecha: 22/07/2025
+ * 
+ * Descripción general:
+ * Este componente `Pagos.jsx` forma parte del frontend de la aplicación Turismo Comunitario.
+ * Permite al usuario confirmar y registrar el pago asociado a una reserva turística.
+ * 
+ * Funcionalidades principales:
+ * - Muestra el detalle de la reserva y las personas que asistirán.
+ * - Permite seleccionar el método de pago entre opciones como efectivo, tarjeta de crédito o transferencia bancaria.
+ * - Valida que el monto ingresado coincida exactamente con el valor total de la reserva.
+ * - Envía la reserva y el pago al backend mediante llamadas API protegidas con token JWT.
+ * - Al confirmar el pago exitosamente, muestra una animación de confeti y redirige automáticamente al usuario a la página de reservas.
+ * - Gestiona estados de carga, éxito y errores mostrando mensajes adecuados al usuario.
+ * 
+ * Este componente usa React Hooks (`useState`, `useContext`, `useLocation`, `useNavigate`) y Material UI para la interfaz,
+ * incluyendo botones con indicadores de carga y alertas informativas.
+ */
 
 import React, { useState, useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import Layout from '../components/layout/Layout';
+import { useLocation, useNavigate } from 'react-router-dom'; // <-- importamos useNavigate
 import { AuthContext } from '../context/AuthContext';
 
 import {
@@ -28,7 +39,6 @@ import {
     ListItemText,
     Divider,
     InputAdornment,
-    Box
 } from '@mui/material';
 
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -42,18 +52,17 @@ import { CircularProgress } from '@mui/material';
 import confetti from 'canvas-confetti';
 
 function Pagos() {
-    const { usuario } = useContext(AuthContext); // Se obtiene el usuario autenticado del contexto
-    const location = useLocation(); // Hook para acceder a la navegación
-    const reserva = location.state; // Se accede a los datos de la reserva pasados por navegación
+    const { usuario } = useContext(AuthContext);
+    const location = useLocation();
+    const navigate = useNavigate(); // <-- inicializamos navigate
+    const reserva = location.state;
 
-    // Estados locales para controlar el formulario
     const [montoIngresado, setMontoIngresado] = useState('');
     const [metodoPago, setMetodoPago] = useState('Efectivo');
     const [isProcessing, setIsProcessing] = useState(false);
     const [pagoExitoso, setPagoExitoso] = useState(false);
     const [mensajeFinal, setMensajeFinal] = useState('');
 
-    // Validación: Si no se recibe información de la reserva, se muestra un mensaje de error
     if (!reserva) {
         return (
             <Container sx={{ mt: 4 }}>
@@ -62,7 +71,6 @@ function Pagos() {
         );
     }
 
-    // Animación visual que se ejecuta cuando el pago se realiza exitosamente
     const lanzarConfetti = () => {
         confetti({
             particleCount: 200,
@@ -71,11 +79,9 @@ function Pagos() {
         });
     };
 
-    // Función principal que realiza la validación del pago y envía las peticiones al backend
     const handlePago = async () => {
         const montoFloat = parseFloat(montoIngresado);
 
-        // Validación estricta del monto
         if (
             !montoIngresado ||
             isNaN(montoFloat) ||
@@ -86,20 +92,20 @@ function Pagos() {
             return;
         }
 
-        // Construcción del payload de la reserva
         const reservaPayload = {
-            usuarioId: reserva.usuarioId,
-            lugarId: reserva.lugarId,
-            cantidadPersonas: reserva.cantidadPersonas,
-            discapacidad: reserva.discapacidad,
-            tiempoInicio: new Date(reserva.tiempoInicio).toISOString(),
-            tiempoFin: new Date(reserva.tiempoFin).toISOString(),
-            personasJson: JSON.stringify(reserva.personas)
+            Id: 0,
+            UsuarioId: reserva.usuarioId,
+            LugarId: reserva.lugarId,
+            CantidadPersonas: reserva.cantidadPersonas,
+            Discapacidad: reserva.discapacidad === true,
+            TiempoInicio: new Date(reserva.tiempoInicio).toISOString(),
+            TiempoFin: new Date(reserva.tiempoFin).toISOString(),
+            PersonasJson: JSON.stringify(reserva.personas),
+            FechaRegistro: new Date().toISOString()
         };
 
         try {
-            // Registro de la reserva en el backend
-            const resReserva = await fetch('https://localhost:7224/api/reservas', {
+            const resReserva = await fetch(`https://localhost:7224/api/reservas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -109,13 +115,13 @@ function Pagos() {
             });
 
             if (!resReserva.ok) {
-                const data = await resReserva.json();
-                throw new Error(data.mensaje || 'Error al crear la reserva.');
+                const errorText = await resReserva.text();
+                console.error("Error al crear reserva:", errorText);
+                throw new Error("Error al crear la reserva: " + errorText);
             }
 
             const reservaCreada = await resReserva.json();
 
-            // Construcción del payload para el registro del pago
             const pagoPayload = {
                 reservaId: reservaCreada.id,
                 monto: montoFloat,
@@ -123,7 +129,6 @@ function Pagos() {
                 estadoPago: 'Completado'
             };
 
-            // Registro del pago en el backend
             const resPago = await fetch('https://localhost:7224/api/pagos', {
                 method: 'POST',
                 headers: {
@@ -138,10 +143,14 @@ function Pagos() {
                 throw new Error(data.mensaje || 'Error al registrar el pago.');
             }
 
-            // Confirmación exitosa del proceso
             setPagoExitoso(true);
             lanzarConfetti();
-            setMensajeFinal('¡Pago registrado y reserva confirmada con éxito!');
+            setMensajeFinal('¡Pago registrado y reserva confirmada con éxito!\nRedirigiendo a tus reservas...');
+
+            // Después de 3 segundos, redirigir a la página de reservas
+            setTimeout(() => {
+                navigate('/ver-reservas');
+            }, 3000);
 
         } catch (error) {
             console.error(error);
@@ -149,113 +158,112 @@ function Pagos() {
         }
     };
 
-    // Renderizado del formulario de pago y confirmación
     return (
-        <Container maxWidth="sm" sx={{ mt: 5 }}>
-            <Paper elevation={3} sx={{ p: 4 }}>
-                <Typography variant="h4" gutterBottom align="center">
-                    <PaymentIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                    Confirmar Pago
-                </Typography>
+        <Layout>
+            <Container maxWidth="sm" sx={{ mt: 5 }}>
+                <Paper elevation={3} sx={{ p: 4 }}>
+                    <Typography variant="h4" gutterBottom align="center">
+                        <PaymentIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                        Confirmar Pago
+                    </Typography>
 
-                <Alert severity="info" sx={{ mb: 3 }}>
-                    <strong>Valor Total de la Reserva:</strong> ${reserva.valorTotal.toFixed(2)}
-                </Alert>
-
-                <Typography variant="h6" gutterBottom>
-                    <PeopleIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
-                    Personas que asistirán:
-                </Typography>
-
-                {/* Lista de personas registradas en la reserva */}
-                <List dense sx={{ mb: 3 }}>
-                    {reserva.personas.map((p, i) => (
-                        <React.Fragment key={i}>
-                            <ListItem>
-                                <ListItemText
-                                    primary={`${p.nombre} ${p.apellido} - Edad: ${p.edad}`}
-                                    secondary={p.discapacidad ? `Discapacidad: ${p.descripcionDiscapacidad || 'N/A'}` : null}
-                                />
-                            </ListItem>
-                            <Divider />
-                        </React.Fragment>
-                    ))}
-                </List>
-
-                {/* Selección del método de pago */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                    <InputLabel>Método de Pago</InputLabel>
-                    <Select
-                        value={metodoPago}
-                        label="Método de Pago"
-                        onChange={(e) => setMetodoPago(e.target.value)}
-                        startAdornment={<CreditCardIcon sx={{ mr: 1 }} />}
-                    >
-                        <MenuItem value="Tarjeta de Crédito">Tarjeta de Crédito</MenuItem>
-                        <MenuItem value="Transferencia Bancaria">Transferencia Bancaria</MenuItem>
-                        <MenuItem value="Efectivo">Efectivo</MenuItem>
-                    </Select>
-                </FormControl>
-
-                {/* Campo para ingresar el monto a pagar */}
-                <TextField
-                    fullWidth
-                    type="number"
-                    label="Ingrese el valor a pagar"
-                    value={montoIngresado}
-                    onChange={(e) => setMontoIngresado(e.target.value)}
-                    inputProps={{ min: 0, step: 0.01 }}
-                    sx={{ mb: 4 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <AttachMoneyIcon />
-                            </InputAdornment>
-                        )
-                    }}
-                />
-
-                {/* Botón de acción para confirmar el pago */}
-                <LoadingButton
-                    variant="contained"
-                    color={pagoExitoso ? "success" : "primary"}
-                    loading={isProcessing}
-                    loadingIndicator={<CircularProgress size={24} color="inherit" />}
-                    startIcon={pagoExitoso ? <CheckCircleIcon /> : <PaymentIcon />}
-                    onClick={async () => {
-                        setMensajeFinal('');
-                        setIsProcessing(true);
-                        await handlePago();
-                        setIsProcessing(false);
-                    }}
-                    sx={{
-                        mt: 2,
-                        fontWeight: 'bold',
-                        paddingX: 3,
-                        paddingY: 1.2,
-                        borderRadius: '12px',
-                        transition: 'all 0.3s ease',
-                        boxShadow: 3,
-                        '&:hover': {
-                            boxShadow: 6,
-                            transform: 'scale(1.03)',
-                        },
-                    }}
-                >
-                    {pagoExitoso ? 'Pago Confirmado' : 'Registrar Pago y Confirmar Reserva'}
-                </LoadingButton>
-
-                {/* Mensaje de estado final del proceso */}
-                {mensajeFinal && (
-                    <Alert
-                        severity={pagoExitoso ? 'success' : 'warning'}
-                        sx={{ mt: 4 }}
-                    >
-                        {mensajeFinal}
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        <strong>Valor Total de la Reserva:</strong> ${reserva.valorTotal.toFixed(2)}
                     </Alert>
-                )}
-            </Paper>
-        </Container>
+
+                    <Typography variant="h6" gutterBottom>
+                        <PeopleIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                        Personas que asistirán:
+                    </Typography>
+
+                    <List dense sx={{ mb: 3 }}>
+                        {reserva.personas.map((p, i) => (
+                            <React.Fragment key={i}>
+                                <ListItem>
+                                    <ListItemText
+                                        primary={`${p.nombre} ${p.apellido} - Edad: ${p.edad}`}
+                                        secondary={p.discapacidad ? `Discapacidad: ${p.descripcionDiscapacidad || 'N/A'}` : null}
+                                    />
+                                </ListItem>
+                                <Divider />
+                            </React.Fragment>
+                        ))}
+                    </List>
+
+                    <FormControl fullWidth sx={{ mb: 3 }}>
+                        <InputLabel>Método de Pago</InputLabel>
+                        <Select
+                            value={metodoPago}
+                            label="Método de Pago"
+                            onChange={(e) => setMetodoPago(e.target.value)}
+                            startAdornment={<CreditCardIcon sx={{ mr: 1 }} />}
+                            disabled={pagoExitoso} // <-- deshabilitar si pago exitoso
+                        >
+                            <MenuItem value="Tarjeta de Crédito">Tarjeta de Crédito</MenuItem>
+                            <MenuItem value="Transferencia Bancaria">Transferencia Bancaria</MenuItem>
+                            <MenuItem value="Efectivo">Efectivo</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <TextField
+                        fullWidth
+                        type="number"
+                        label="Ingrese el valor a pagar"
+                        value={montoIngresado}
+                        onChange={(e) => setMontoIngresado(e.target.value)}
+                        inputProps={{ min: 0, step: 0.01 }}
+                        sx={{ mb: 4 }}
+                        disabled={pagoExitoso} // <-- deshabilitar si pago exitoso
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <AttachMoneyIcon />
+                                </InputAdornment>
+                            )
+                        }}
+                    />
+
+                    <LoadingButton
+                        variant="contained"
+                        color={pagoExitoso ? "success" : "primary"}
+                        loading={isProcessing}
+                        loadingIndicator={<CircularProgress size={24} color="inherit" />}
+                        startIcon={pagoExitoso ? <CheckCircleIcon /> : <PaymentIcon />}
+                        onClick={async () => {
+                            setMensajeFinal('');
+                            setIsProcessing(true);
+                            await handlePago();
+                            setIsProcessing(false);
+                        }}
+                        disabled={pagoExitoso} // <-- deshabilitar botón si pago exitoso
+                        sx={{
+                            mt: 2,
+                            fontWeight: 'bold',
+                            paddingX: 3,
+                            paddingY: 1.2,
+                            borderRadius: '12px',
+                            transition: 'all 0.3s ease',
+                            boxShadow: 3,
+                            '&:hover': {
+                                boxShadow: 6,
+                                transform: 'scale(1.03)',
+                            },
+                        }}
+                    >
+                        {pagoExitoso ? 'Pago Confirmado' : 'Registrar Pago y Confirmar Reserva'}
+                    </LoadingButton>
+
+                    {mensajeFinal && (
+                        <Alert
+                            severity={pagoExitoso ? 'success' : 'warning'}
+                            sx={{ mt: 4, whiteSpace: 'pre-line' }} // para que los saltos de línea funcionen
+                        >
+                            {mensajeFinal}
+                        </Alert>
+                    )}
+                </Paper>
+            </Container>
+        </Layout>
     );
 }
 

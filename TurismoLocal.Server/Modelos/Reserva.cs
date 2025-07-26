@@ -31,6 +31,7 @@ namespace TurismoLocal.Server.Modelos
         // Indica si hay alguna persona con discapacidad en el grupo.
         public bool Discapacidad { get; set; }
 
+
         // Fecha y hora de inicio de la reserva.
         public DateTime TiempoInicio { get; set; }
 
@@ -43,6 +44,6 @@ namespace TurismoLocal.Server.Modelos
         // Fecha en la que se registró la reserva (valor predeterminado: fecha actual).
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 
-        public ICollection<Pago> Pagos { get; set; }
+        public ICollection<Pago>? Pagos { get; set; }
     }
 }
